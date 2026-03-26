@@ -1,0 +1,24 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://memora.dev/schemas/architecture.schema.json",
+  "title": "Memora ARCHITECTURE Card",
+  "description": "Schema for ARCHITECTURE.md — system design, modules, data flows and dependencies",
+  "type": "object",
+  "required": ["title", "id", "type", "version", "authority", "status", "pii_risk"],
+  "properties": {
+    "title":          { "type": "string", "minLength": 1 },
+    "id":             { "type": "string" },
+    "type":           { "type": "string", "const": "ARCHITECTURE" },
+    "version":        { "type": "string", "pattern": "^\\d+\\.\\d+\\.\\d+$" },
+    "authority":      { "type": "string", "enum": ["controlled", "immutable", "free"] },
+    "status":         { "type": "string", "enum": ["active", "draft", "deprecated"] },
+    "pii_risk":       { "type": "string", "enum": ["none", "low", "medium", "high"] },
+    "ttl":            { "oneOf": [{ "type": "null" }, { "type": "string" }] },
+    "tags":           { "type": "array", "items": { "type": "string" } },
+    "purpose":        { "type": "string" },
+    "last_verified":  { "type": "string", "pattern": "^\\d{4}-\\d{2}-\\d{2}$" },
+    "depends_on":     { "type": "array", "items": { "type": "string" } },
+    "provides":       { "type": "array", "items": { "type": "string" } }
+  },
+  "additionalProperties": true
+}

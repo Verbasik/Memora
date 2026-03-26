@@ -1,0 +1,25 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://memora.dev/schemas/policy.schema.json",
+  "title": "Memora POLICY Card",
+  "description": "Schema for POLICIES/*.md — security, privacy and governance rules",
+  "type": "object",
+  "required": ["title", "id", "type", "version", "authority", "status", "owner", "scope", "created_at", "pii_risk"],
+  "properties": {
+    "title":      { "type": "string", "minLength": 1 },
+    "id":         { "type": "string" },
+    "type":       { "type": "string", "const": "POLICY" },
+    "version":    { "type": "string", "pattern": "^\\d+\\.\\d+\\.\\d+$" },
+    "authority":  { "type": "string", "enum": ["controlled", "immutable"] },
+    "status":     { "type": "string", "enum": ["active", "draft", "deprecated"] },
+    "owner":      { "type": "string", "minLength": 1 },
+    "scope":      { "type": "string", "minLength": 1,
+                    "description": "What this policy applies to: data types, files, agents, processes" },
+    "created_at": { "type": "string", "pattern": "^\\d{4}-\\d{2}-\\d{2}$" },
+    "pii_risk":   { "type": "string", "enum": ["none", "low", "medium", "high"] },
+    "ttl":        { "oneOf": [{ "type": "null" }, { "type": "string" }] },
+    "tags":       { "type": "array", "items": { "type": "string" } },
+    "last_verified": { "type": "string", "pattern": "^\\d{4}-\\d{2}-\\d{2}$" }
+  },
+  "additionalProperties": true
+}

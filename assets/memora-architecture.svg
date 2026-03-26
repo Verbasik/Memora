@@ -1,0 +1,141 @@
+<svg width="1600" height="980" viewBox="0 0 1600 980" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Memora architecture diagram">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1600" y2="980" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#0B1220"/>
+      <stop offset="1" stop-color="#101A2E"/>
+    </linearGradient>
+    <linearGradient id="purple" x1="0" y1="0" x2="1" y2="1">
+      <stop stop-color="#8B5CF6"/>
+      <stop offset="1" stop-color="#A855F7"/>
+    </linearGradient>
+    <linearGradient id="cyan" x1="0" y1="0" x2="1" y2="1">
+      <stop stop-color="#06B6D4"/>
+      <stop offset="1" stop-color="#22D3EE"/>
+    </linearGradient>
+    <linearGradient id="green" x1="0" y1="0" x2="1" y2="1">
+      <stop stop-color="#10B981"/>
+      <stop offset="1" stop-color="#34D399"/>
+    </linearGradient>
+    <filter id="shadow" x="-20" y="-20" width="1640" height="1020" filterUnits="userSpaceOnUse">
+      <feDropShadow dx="0" dy="18" stdDeviation="24" flood-color="#000000" flood-opacity="0.28"/>
+    </filter>
+    <style>
+      .title { font: 700 52px Inter,Segoe UI,Arial,sans-serif; fill: #F8FAFC; }
+      .subtitle { font: 500 22px Inter,Segoe UI,Arial,sans-serif; fill: #94A3B8; }
+      .boxTitle { font: 700 24px Inter,Segoe UI,Arial,sans-serif; fill: #F8FAFC; }
+      .boxText { font: 500 18px Inter,Segoe UI,Arial,sans-serif; fill: #CBD5E1; }
+      .mono { font: 600 17px JetBrains Mono,Consolas,monospace; fill: #E2E8F0; }
+      .label { font: 600 16px Inter,Segoe UI,Arial,sans-serif; fill: #C7D2FE; }
+    </style>
+  </defs>
+
+  <rect width="1600" height="980" rx="30" fill="url(#bg)"/>
+
+  <text x="84" y="100" class="title">Memora — Architecture Overview</text>
+  <text x="84" y="140" class="subtitle">Canonical instructions, routed knowledge, isolated session memory, and controlled promotion into stable project context.</text>
+
+  <g filter="url(#shadow)">
+    <rect x="84" y="210" width="1432" height="680" rx="28" fill="#0F172A" stroke="#1E293B"/>
+  </g>
+
+  <g>
+    <rect x="630" y="246" width="340" height="88" rx="18" fill="#111827" stroke="#4F46E5" stroke-width="2.5"/>
+    <text x="742" y="283" class="boxTitle" text-anchor="middle">AGENTS.md</text>
+    <text x="800" y="310" class="boxText" text-anchor="middle">Canonical instructions for every agent</text>
+  </g>
+
+  <g>
+    <rect x="600" y="384" width="400" height="110" rx="22" fill="#121B34" stroke="#06B6D4" stroke-width="2.5"/>
+    <text x="800" y="428" class="boxTitle" text-anchor="middle">memory-bank / INDEX.md</text>
+    <text x="800" y="458" class="boxText" text-anchor="middle">Routing table for minimal context loading</text>
+  </g>
+
+  <g>
+    <rect x="130" y="582" width="238" height="140" rx="22" fill="#151B31" stroke="#334155"/>
+    <text x="249" y="624" class="boxTitle" text-anchor="middle">PROJECT.md</text>
+    <text x="249" y="654" class="boxText" text-anchor="middle">Identity</text>
+    <text x="249" y="678" class="boxText" text-anchor="middle">Scope</text>
+    <text x="249" y="702" class="boxText" text-anchor="middle">Domain terms</text>
+  </g>
+
+  <g>
+    <rect x="398" y="582" width="238" height="140" rx="22" fill="#151B31" stroke="#334155"/>
+    <text x="517" y="624" class="boxTitle" text-anchor="middle">ARCHITECTURE.md</text>
+    <text x="517" y="654" class="boxText" text-anchor="middle">Components</text>
+    <text x="517" y="678" class="boxText" text-anchor="middle">Data flows</text>
+    <text x="517" y="702" class="boxText" text-anchor="middle">Boundaries</text>
+  </g>
+
+  <g>
+    <rect x="666" y="582" width="238" height="140" rx="22" fill="#151B31" stroke="#334155"/>
+    <text x="785" y="624" class="boxTitle" text-anchor="middle">CONVENTIONS.md</text>
+    <text x="785" y="654" class="boxText" text-anchor="middle">Style</text>
+    <text x="785" y="678" class="boxText" text-anchor="middle">Naming</text>
+    <text x="785" y="702" class="boxText" text-anchor="middle">Workflow</text>
+  </g>
+
+  <g>
+    <rect x="934" y="582" width="238" height="140" rx="22" fill="#151B31" stroke="#334155"/>
+    <text x="1053" y="624" class="boxTitle" text-anchor="middle">TESTING.md</text>
+    <text x="1053" y="654" class="boxText" text-anchor="middle">Checks</text>
+    <text x="1053" y="678" class="boxText" text-anchor="middle">CI rules</text>
+    <text x="1053" y="702" class="boxText" text-anchor="middle">Validation</text>
+  </g>
+
+  <g>
+    <rect x="1202" y="582" width="238" height="140" rx="22" fill="#151B31" stroke="#334155"/>
+    <text x="1321" y="624" class="boxTitle" text-anchor="middle">DECISIONS / ADR</text>
+    <text x="1321" y="654" class="boxText" text-anchor="middle">Why choices exist</text>
+    <text x="1321" y="678" class="boxText" text-anchor="middle">Traceability</text>
+    <text x="1321" y="702" class="boxText" text-anchor="middle">Evolution</text>
+  </g>
+
+  <g>
+    <rect x="356" y="774" width="270" height="86" rx="20" fill="#132538" stroke="#10B981" stroke-width="2.5"/>
+    <text x="491" y="810" class="boxTitle" text-anchor="middle">AREAS / PATTERNS</text>
+    <text x="491" y="836" class="boxText" text-anchor="middle">Subsystem knowledge and reusable techniques</text>
+  </g>
+
+  <g>
+    <rect x="682" y="760" width="236" height="114" rx="20" fill="#1B1634" stroke="#8B5CF6" stroke-width="2.5"/>
+    <text x="800" y="798" class="boxTitle" text-anchor="middle">.local / CURRENT.md</text>
+    <text x="800" y="826" class="boxText" text-anchor="middle">Active session state</text>
+    <text x="800" y="850" class="boxText" text-anchor="middle">Next steps · Risks · Active files</text>
+  </g>
+
+  <g>
+    <rect x="974" y="760" width="270" height="114" rx="20" fill="#162936" stroke="#06B6D4" stroke-width="2.5"/>
+    <text x="1109" y="798" class="boxTitle" text-anchor="middle">.local / HANDOFF.md</text>
+    <text x="1109" y="826" class="boxText" text-anchor="middle">Briefing for next session</text>
+    <text x="1109" y="850" class="boxText" text-anchor="middle">Transfer without context loss</text>
+  </g>
+
+  <g stroke="#A5B4FC" stroke-width="3" stroke-linecap="round">
+    <path d="M800 334V384"/>
+    <path d="M800 494V548"/>
+    <path d="M249 548V582"/>
+    <path d="M517 548V582"/>
+    <path d="M785 548V582"/>
+    <path d="M1053 548V582"/>
+    <path d="M1321 548V582"/>
+    <path d="M800 548H249"/>
+    <path d="M800 548H517"/>
+    <path d="M800 548H785"/>
+    <path d="M800 548H1053"/>
+    <path d="M800 548H1321"/>
+  </g>
+
+  <g stroke="#22D3EE" stroke-width="3" stroke-linecap="round">
+    <path d="M785 722V742"/>
+    <path d="M785 742H491"/>
+    <path d="M491 742V774"/>
+    <path d="M800 722V760"/>
+    <path d="M1053 722V742"/>
+    <path d="M1053 742H1109"/>
+    <path d="M1109 742V760"/>
+  </g>
+
+  <g>
+    <text x="86" y="930" class="label">Flow: AGENTS.md → INDEX routing → minimal stable context → isolated session memory → promotion of durable knowledge.</text>
+  </g>
+</svg>

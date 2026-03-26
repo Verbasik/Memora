@@ -1,0 +1,28 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://memora.dev/schemas/decision.schema.json",
+  "title": "Memora DECISION / ADR Card",
+  "description": "Schema for DECISIONS.md and ADR/*.md — architectural decision records",
+  "type": "object",
+  "required": ["title", "id", "type", "version", "authority", "status", "pii_risk"],
+  "properties": {
+    "title":         { "type": "string", "minLength": 1 },
+    "id":            { "type": "string" },
+    "type":          { "type": "string", "enum": ["DECISIONS", "ADR"] },
+    "version":       { "type": "string", "pattern": "^\\d+\\.\\d+\\.\\d+$" },
+    "authority":     { "type": "string", "enum": ["controlled", "immutable"] },
+    "status":        {
+      "type": "string",
+      "enum": ["active", "draft", "deprecated", "proposed", "accepted", "superseded"],
+      "description": "ADR lifecycle status"
+    },
+    "pii_risk":      { "type": "string", "enum": ["none", "low", "medium", "high"] },
+    "ttl":           { "oneOf": [{ "type": "null" }, { "type": "string" }] },
+    "tags":          { "type": "array", "items": { "type": "string" } },
+    "date":          { "type": "string", "pattern": "^\\d{4}-\\d{2}-\\d{2}$" },
+    "last_verified": { "type": "string", "pattern": "^\\d{4}-\\d{2}-\\d{2}$" },
+    "superseded_by": { "type": "string", "description": "ADR id that supersedes this one" },
+    "depends_on":    { "type": "array", "items": { "type": "string" } }
+  },
+  "additionalProperties": true
+}

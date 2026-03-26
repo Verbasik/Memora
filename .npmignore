@@ -1,0 +1,28 @@
+# Keep package broad: exclude only VCS and typical junk
+
+# Version control
+.git
+.gitignore
+.gitattributes
+.gitmodules
+
+# Node/npm artifacts
+node_modules/
+npm-debug.log*
+yarn.lock
+pnpm-lock.yaml
+.npmrc
+.npm/
+.npm-cache/
+
+# OS/editor cruft
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+
+# Build/temp (safe defaults; remove if you need to ship them)
+dist/
+.tmp/
+.temp/
+*.log

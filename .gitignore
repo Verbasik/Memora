@@ -1,0 +1,64 @@
+# Node.js
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.npm-cache/
+pnpm-lock.yaml
+package-lock.json
+yarn.lock
+
+# Memory bank — локальные сессионные файлы (не коммитятся)
+memory-bank/.local/
+memory-bank/.sessions/
+memory-bank/ARCHIVE/
+
+# Auto-memory агентов (персональные предпочтения)
+.claude/memory/
+.qwen/memory/
+.codex/memory/
+.agents/memory/
+.opencode/memory/
+
+# IDE и редакторы
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+.AppleDouble
+.LSOverride
+*.sublime-project
+*.sublime-workspace
+
+# OS-specific
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Локальные конфиги
+.env
+.env.local
+.env.*.local
+.claude/settings.local.json
+
+# Build и dist
+dist/
+build/
+*.tgz
+*.tar.gz
+
+# Временные файлы
+*.tmp
+*.bak
+*.log
+.cache/
+
+# Claude-specific
+.claude/worktrees/
+.claude/claud-memory/

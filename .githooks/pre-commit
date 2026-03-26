@@ -1,0 +1,44 @@
+#!/usr/bin/env bash
+# .githooks/pre-commit
+# Runs before each git commit.
+# Validates front-matter in any staged memory-bank/*.md files.
+#
+# Setup (auto via `npm run prepare`):
+#   git config core.hooksPath .githooks
+#
+# Manual setup:
+#   chmod +x .githooks/pre-commit
+#   git config core.hooksPath .githooks
+
+set -eo pipefail
+
+# ── Check if there are staged changes in memory-bank/ ─────────────────────────
+CHANGED_MB=$(git diff --cached --name-only 2>/dev/null | grep "^memory-bank/" | grep "\.md$" | head -1)
+
+if [ -z "$CHANGED_MB" ]; then
+  exit 0
+fi
+
+# ── Require node ──────────────────────────────────────────────────────────────
+if ! command -v node &>/dev/null; then
+  echo "⚠  pre-commit: node not found — skipping memora validate"
+  exit 0
+fi
+
+# ── Run validation ─────────────────────────────────────────────────────────────
+echo ""
+echo "🔍  memora validate (memory-bank front-matter)..."
+echo ""
+
+if node bin/memora.js validate 2>&1; then
+  echo ""
+  echo "✓   All memory-bank files are valid."
+  echo ""
+else
+  echo ""
+  echo "✗   Validation failed. Fix the errors above before committing."
+  echo "    Run:  node bin/memora.js validate"
+  echo "    Tip:  node bin/memora.js validate --watch  for live feedback"
+  echo ""
+  exit 1
+fi

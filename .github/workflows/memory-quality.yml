@@ -1,0 +1,83 @@
+name: Memory Quality
+
+on:
+  push:
+    branches: ["**"]
+    paths:
+      - "memory-bank/**"
+      - "schemas/**"
+      - "**.md"
+      - "bin/**"
+  pull_request:
+    paths:
+      - "memory-bank/**"
+      - "schemas/**"
+      - "**.md"
+      - "bin/**"
+
+jobs:
+  # ── Core: required fields, authority, status ───────────────────────────────
+  validate-core:
+    name: "🔍 Validate — Core"
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: "memora validate (Core — errors block merge)"
+        run: node bin/memora.js validate --format text
+
+  # ── Extended: all recommended fields ───────────────────────────────────────
+  validate-extended:
+    name: "🔎 Validate — Extended (--strict)"
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: "memora validate --strict (Extended — advisory)"
+        run: node bin/memora.js validate --strict --format text
+        continue-on-error: true   # Extended is advisory, does not block merge
+
+      - name: "memora validate --format json (machine-readable report)"
+        run: node bin/memora.js validate --format json > /tmp/validation-report.json 2>&1 || true
+
+      - name: Upload validation report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: validation-report
+          path: /tmp/validation-report.json
+
+  # ── Markdown lint ───────────────────────────────────────────────────────────
+  markdownlint:
+    name: "📝 Markdownlint"
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Install markdownlint-cli2
+        run: npm install -g markdownlint-cli2
+
+      - name: Run markdownlint
+        run: |
+          markdownlint-cli2 \
+            "**/*.md" \
+            "#node_modules/**" \
+            "#.git/**"

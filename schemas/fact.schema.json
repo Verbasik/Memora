@@ -1,0 +1,53 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://memora.dev/schemas/fact.schema.json",
+  "title": "Memora FACT Card",
+  "description": "Schema for FACTS/*.md — standalone factual assertions with provenance",
+  "type": "object",
+  "required": ["title", "id", "type", "version", "authority", "status", "owner", "created_at", "pii_risk", "confidence"],
+  "properties": {
+    "title":      { "type": "string", "minLength": 1 },
+    "id":         { "type": "string" },
+    "type":       { "type": "string", "const": "FACT" },
+    "version":    { "type": "string", "pattern": "^\\d+\\.\\d+\\.\\d+$" },
+    "authority":  { "type": "string", "enum": ["controlled", "free"] },
+    "status":     { "type": "string", "enum": ["active", "draft", "deprecated"] },
+    "owner":      { "type": "string", "minLength": 1,
+                    "description": "Agent or role responsible for this fact" },
+    "created_at": { "type": "string", "pattern": "^\\d{4}-\\d{2}-\\d{2}$" },
+    "updated_at": { "type": "string", "pattern": "^\\d{4}-\\d{2}-\\d{2}$" },
+    "pii_risk":   { "type": "string", "enum": ["none", "low", "medium", "high"] },
+    "ttl":        { "oneOf": [{ "type": "null" }, { "type": "string" }] },
+    "tags":       { "type": "array", "items": { "type": "string" } },
+    "confidence": {
+      "type": "string",
+      "enum": ["observed", "inferred", "confirmed"],
+      "description": "Confidence level: observed (1 session) | inferred (2 sessions) | confirmed (3+ or human-review)"
+    },
+    "provenance": {
+      "type": "object",
+      "required": ["source"],
+      "properties": {
+        "source": { "type": "string", "description": "Origin: SESSIONS/file.md | human-review | external-doc" },
+        "date":   { "type": "string", "pattern": "^\\d{4}-\\d{2}-\\d{2}$" }
+      }
+    },
+    "last_verified": { "type": "string", "pattern": "^\\d{4}-\\d{2}-\\d{2}$" },
+    "observation_type": {
+      "type": "string",
+      "enum": ["bugfix", "feature", "refactor", "discovery", "decision", "incident"],
+      "description": "Type of observation that produced this fact. See PATTERNS/observation-typing.md"
+    },
+    "concepts": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "enum": ["how-it-works", "why-it-exists", "what-changed", "problem-solution", "gotcha", "pattern", "trade-off"]
+      },
+      "minItems": 0,
+      "maxItems": 7,
+      "description": "Knowledge concepts this fact covers (2-5 recommended). See PATTERNS/observation-typing.md"
+    }
+  },
+  "additionalProperties": true
+}

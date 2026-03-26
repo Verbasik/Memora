@@ -1,0 +1,84 @@
+<svg width="1600" height="720" viewBox="0 0 1600 720" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Memora hero banner">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1600" y2="720" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#0B1020"/>
+      <stop offset="1" stop-color="#121A33"/>
+    </linearGradient>
+    <radialGradient id="glow1" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(355 160) rotate(27) scale(460 300)">
+      <stop stop-color="#7C3AED" stop-opacity="0.55"/>
+      <stop offset="1" stop-color="#7C3AED" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="glow2" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(1220 540) rotate(-22) scale(520 300)">
+      <stop stop-color="#06B6D4" stop-opacity="0.35"/>
+      <stop offset="1" stop-color="#06B6D4" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="card" x1="0" y1="0" x2="1" y2="1">
+      <stop stop-color="#FFFFFF" stop-opacity="0.16"/>
+      <stop offset="1" stop-color="#FFFFFF" stop-opacity="0.05"/>
+    </linearGradient>
+    <linearGradient id="line" x1="0" y1="0" x2="1" y2="1">
+      <stop stop-color="#8B5CF6"/>
+      <stop offset="1" stop-color="#22D3EE"/>
+    </linearGradient>
+    <filter id="blur" x="-100" y="-100" width="1800" height="920" filterUnits="userSpaceOnUse">
+      <feGaussianBlur stdDeviation="40"/>
+    </filter>
+  </defs>
+
+  <rect width="1600" height="720" rx="32" fill="url(#bg)"/>
+  <ellipse cx="355" cy="160" rx="460" ry="300" fill="url(#glow1)" filter="url(#blur)"/>
+  <ellipse cx="1220" cy="540" rx="520" ry="300" fill="url(#glow2)" filter="url(#blur)"/>
+
+  <g opacity="0.18" stroke="#D8E1FF">
+    <path d="M120 118H1480"/>
+    <path d="M120 178H1480"/>
+    <path d="M120 238H1480"/>
+    <path d="M120 298H1480"/>
+    <path d="M120 358H1480"/>
+    <path d="M120 418H1480"/>
+    <path d="M120 478H1480"/>
+    <path d="M120 538H1480"/>
+    <path d="M120 598H1480"/>
+    <path d="M220 90V630"/>
+    <path d="M380 90V630"/>
+    <path d="M540 90V630"/>
+    <path d="M700 90V630"/>
+    <path d="M860 90V630"/>
+    <path d="M1020 90V630"/>
+    <path d="M1180 90V630"/>
+    <path d="M1340 90V630"/>
+  </g>
+
+  <g>
+    <rect x="96" y="88" width="1408" height="544" rx="28" fill="url(#card)" stroke="rgba(255,255,255,0.18)"/>
+  </g>
+
+  <g>
+    <circle cx="230" cy="196" r="54" fill="#141B34" stroke="url(#line)" stroke-width="3"/>
+    <path d="M202 196C202 180.536 214.536 168 230 168C245.464 168 258 180.536 258 196C258 211.464 245.464 224 230 224C214.536 224 202 211.464 202 196Z" stroke="#E6ECFF" stroke-width="3"/>
+    <path d="M214 196H246" stroke="#E6ECFF" stroke-width="3" stroke-linecap="round"/>
+    <path d="M230 180V212" stroke="#E6ECFF" stroke-width="3" stroke-linecap="round"/>
+  </g>
+
+  <text x="320" y="200" fill="#F8FAFC" font-family="Inter,Segoe UI,Arial,sans-serif" font-size="74" font-weight="700">Memora</text>
+  <text x="320" y="254" fill="#C7D2FE" font-family="Inter,Segoe UI,Arial,sans-serif" font-size="28" font-weight="500">Production memory architecture for AI coding agents</text>
+  <text x="320" y="304" fill="#93C5FD" font-family="Inter,Segoe UI,Arial,sans-serif" font-size="22">Progressive context loading • Canonical knowledge ownership • Cross-tool compatibility</text>
+
+  <g>
+    <rect x="320" y="352" width="286" height="54" rx="14" fill="#F8FAFC"/>
+    <text x="355" y="387" fill="#111827" font-family="Inter,Segoe UI,Arial,sans-serif" font-size="22" font-weight="700">AGENTS.md standard</text>
+
+    <rect x="624" y="352" width="270" height="54" rx="14" fill="#161F3C" stroke="#334155"/>
+    <text x="663" y="387" fill="#E2E8F0" font-family="Inter,Segoe UI,Arial,sans-serif" font-size="22" font-weight="600">Memory Bank v3</text>
+
+    <rect x="912" y="352" width="286" height="54" rx="14" fill="#161F3C" stroke="#334155"/>
+    <text x="952" y="387" fill="#E2E8F0" font-family="Inter,Segoe UI,Arial,sans-serif" font-size="22" font-weight="600">Production-ready</text>
+  </g>
+
+  <g>
+    <rect x="320" y="462" width="896" height="112" rx="20" fill="#0F172A" stroke="#24324F"/>
+    <text x="352" y="506" fill="#A5B4FC" font-family="JetBrains Mono,Consolas,monospace" font-size="22">Read AGENTS.md</text>
+    <text x="352" y="538" fill="#E2E8F0" font-family="JetBrains Mono,Consolas,monospace" font-size="22">→ open memory-bank/INDEX.md</text>
+    <text x="352" y="570" fill="#E2E8F0" font-family="JetBrains Mono,Consolas,monospace" font-size="22">→ load only relevant context → work → promote durable knowledge</text>
+  </g>
+</svg>

@@ -1,0 +1,39 @@
+{
+  "default": true,
+
+  "MD001": false,
+  "MD004": false,
+  "MD009": false,
+  "MD012": false,
+  "MD013": false,
+  "MD022": false,
+  "MD025": false,
+  "MD028": false,
+  "MD029": false,
+  "MD031": false,
+  "MD032": false,
+  "MD033": false,
+  "MD034": false,
+  "MD036": false,
+  "MD040": false,
+  "MD041": false,
+  "MD047": false,
+  "MD052": false,
+  "MD060": false,
+
+  "MD024": {
+    "allow_different_nesting": true
+  },
+
+  "MD046": {
+    "style": "fenced"
+  },
+
+  "MD049": {
+    "style": "underscore"
+  },
+
+  "MD050": {
+    "style": "asterisk"
+  }
+}

@@ -1,0 +1,38 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(wc -l /Users/me/Documents/Memora/memory-bank/*.md)",
+      "Bash(du -sh /Users/me/Documents/Memora/*/)"
+    ],
+    "deny": [
+      "Read(.env*)",
+      "Read(*.key)",
+      "Read(*.pem)",
+      "Read(*.p12)",
+      "Read(*credentials*)",
+      "Read(*secret*)",
+      "Write(.env*)"
+    ]
+  },
+  "hooks": {
+    "Stop": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash \"$(git rev-parse --show-toplevel)/memory-bank/scripts/check-reflect-trigger.sh\""
+          },
+          {
+            "type": "command",
+            "command": "bash \"$(git rev-parse --show-toplevel)/memory-bank/scripts/check-consolidate-trigger.sh\""
+          },
+          {
+            "type": "command",
+            "command": "bash \"$(git rev-parse --show-toplevel)/memory-bank/scripts/check-gc-trigger.sh\""
+          }
+        ]
+      }
+    ]
+  }
+}

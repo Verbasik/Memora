@@ -1,0 +1,26 @@
+{
+  "name": "memora-cli",
+  "version": "0.0.2",
+  "private": false,
+  "description": "CLI to initialize and validate Memora memory-bank structure in any directory",
+  "bin": {
+    "memora": "bin/memora.js"
+  },
+  "scripts": {
+    "postinstall": "node bin/postinstall.js",
+    "prepare": "git config core.hooksPath .githooks 2>/dev/null || true",
+    "test": "node -e 'console.log(\"OK\")'"
+  },
+  "keywords": [
+    "memora",
+    "memory-bank",
+    "agents",
+    "scaffold",
+    "template"
+  ],
+  "author": "",
+  "license": "MIT",
+  "engines": {
+    "node": ">=16"
+  }
+}

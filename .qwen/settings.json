@@ -1,0 +1,30 @@
+{
+  "context": {
+    "fileName": [
+      "AGENTS.md",
+      "QWEN.md"
+    ]
+  },
+  "hooks": {
+    "Stop": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash \"$(git rev-parse --show-toplevel)/memory-bank/scripts/check-reflect-trigger.sh\""
+          },
+          {
+            "type": "command",
+            "command": "bash \"$(git rev-parse --show-toplevel)/memory-bank/scripts/check-consolidate-trigger.sh\""
+          },
+          {
+            "type": "command",
+            "command": "bash \"$(git rev-parse --show-toplevel)/memory-bank/scripts/check-gc-trigger.sh\""
+          }
+        ]
+      }
+    ]
+  },
+  "$version": 3
+}

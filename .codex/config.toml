@@ -1,0 +1,30 @@
+
+# Codex CLI — проектная конфигурация
+# Для активации: codex --trust-project
+
+[project]
+sandbox = "workspace-write"
+
+[project.agents_md]
+project_doc_fallback_filenames = ["CLAUDE.md"]
+
+# ── Hooks ──────────────────────────────────────────────
+# СТАТУС: experimental (добавлено в Codex CLI v0.114.0, март 2026).
+# Точный TOML-формат может измениться. Проверь актуальную документацию:
+#   codex --help | grep hook
+#
+# Codex поддерживает один [hooks.Stop], поэтому используем wrapper-скрипт,
+# который последовательно запускает все три advisory-хука:
+#   1. check-reflect-trigger.sh     (REFLECT_THRESHOLD,     default: 3)
+#   2. check-consolidate-trigger.sh (CONSOLIDATE_THRESHOLD, default: 5)
+#   3. check-gc-trigger.sh          (GC_THRESHOLD,          default: 20)
+
+[hooks.Stop]
+command = "bash \"$(git rev-parse --show-toplevel)/memory-bank/scripts/run-stop-hooks.sh\""
+
+# ── Fallback: notify (если hooks не работают) ──────────
+# Раскомментируй если [hooks.Stop] не поддерживается:
+#
+# [notify]
+# command = "bash \"$(git rev-parse --show-toplevel)/memory-bank/scripts/run-stop-hooks.sh\""
+

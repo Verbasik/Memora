@@ -1,0 +1,26 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://memora.dev/schemas/episode.schema.json",
+  "title": "Memora EPISODE Card",
+  "description": "Schema for EPISODES/*.md — structured records of past sessions promoted from .local/SESSIONS/",
+  "type": "object",
+  "required": ["title", "id", "type", "version", "authority", "status", "owner", "created_at", "pii_risk"],
+  "properties": {
+    "title":      { "type": "string", "minLength": 1 },
+    "id":         { "type": "string" },
+    "type":       { "type": "string", "const": "EPISODE" },
+    "version":    { "type": "string", "pattern": "^\\d+\\.\\d+\\.\\d+$" },
+    "authority":  { "type": "string", "enum": ["free"] },
+    "status":     { "type": "string", "enum": ["active", "draft", "deprecated"] },
+    "owner":      { "type": "string", "minLength": 1 },
+    "session_id": { "type": "string", "description": "Optional reference to source session" },
+    "created_at": { "type": "string", "pattern": "^\\d{4}-\\d{2}-\\d{2}$" },
+    "pii_risk":   { "type": "string", "enum": ["none", "low", "medium", "high"] },
+    "ttl":        {
+      "oneOf": [{ "type": "null" }, { "type": "string" }],
+      "description": "Default: 90d — episodes are temporary by design"
+    },
+    "tags":       { "type": "array", "items": { "type": "string" } }
+  },
+  "additionalProperties": true
+}
