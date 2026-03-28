@@ -1,0 +1,148 @@
+# Security
+
+**Purpose:** explain Memora’s approach to memory hygiene, privacy awareness, and safe operating practices.  
+**Audience:** users, maintainers, security-conscious teams.  
+**Read when:** you want to understand how Memora helps keep project memory clean and safe.  
+**See also:** [Patterns](./PATTERNS.md), [Validation](./VALIDATION.md), [Manifesto](./MANIFESTO.md)
+
+---
+
+## Security posture
+
+Memora is designed with **memory hygiene** in mind.
+
+That means the project encourages teams to treat memory-bank files as structured project assets that should remain:
+
+- useful,
+- reviewable,
+- safe,
+- free from sensitive spillover.
+
+This is one of Memora’s important practical strengths.
+
+---
+
+## What should never be stored
+
+As a working rule, do not store the following in project memory:
+
+- API keys,
+- access tokens,
+- passwords,
+- private credentials,
+- raw secrets,
+- sensitive personal data.
+
+Memora’s structure and guidance are designed to support that discipline.
+
+---
+
+## Why memory hygiene matters
+
+Project memory can easily become a dangerous dumping ground if teams blur the boundary between:
+
+- stable knowledge,
+- active session notes,
+- private or secret material.
+
+Memora helps avoid that by:
+
+- isolating session state in `.local/`,
+- encouraging canonical ownership of stable knowledge,
+- providing privacy-oriented pattern guidance,
+- supporting maintenance workflows and reviewable memory structure.
+
+---
+
+## Practical safeguards already included
+
+Memora already includes several useful memory-hygiene elements:
+
+### 1. Entry-point guidance in `AGENTS.md`
+The main agent entry file establishes secret-aware operating expectations.
+
+### 2. Privacy-aware pattern guidance
+The included privacy-control pattern gives teams a reusable model for handling sensitive or ephemeral content.
+
+### 3. Local-state isolation
+The `.local/` layer gives a dedicated place for current working context and short-lived session material.
+
+### 4. Hook and audit-oriented workflow structure
+The repository includes maintenance workflows and deterministic advisory hooks that help keep memory visible and manageable over time.
+
+### 5. Ignore-oriented local setup
+The initialization flow helps reinforce that local and sensitive session-state should stay separate from stable memory.
+
+---
+
+## Privacy zones
+
+Memora includes a privacy-control pattern that gives teams a consistent vocabulary for handling memory sensitivity.
+
+This matters because some information should be:
+
+- excluded entirely,
+- kept local,
+- promoted carefully,
+- clearly distinguished from stable reusable knowledge.
+
+Use the privacy pattern as the main guidance surface for safe memory handling.
+
+---
+
+## Safe operating practices
+
+### Keep secrets out of memory files
+Even if the memory-bank is convenient, it is not a place for secret values.
+
+### Prefer references over secret material
+When sensitive configuration must be mentioned, prefer environment-variable names or secure references instead of raw values.
+
+### Keep active state separate from durable knowledge
+Use `.local/` for session context and keep canonical files focused on stable, reusable project memory.
+
+### Review promoted knowledge
+Before durable promotion, ask whether the information is:
+- stable,
+- safe,
+- useful beyond one session,
+- appropriate for a shared project memory-bank.
+
+---
+
+## Why Memora’s security approach is useful
+
+Memora’s strength is not that it tries to become a security appliance. Its strength is that it makes safer memory behavior easier to follow through:
+
+- structure reduces accidental sprawl,
+- separation reduces cross-contamination,
+- workflows make maintenance more visible,
+- patterns provide a reusable safety vocabulary.
+
+That makes the repository friendlier for teams that care about long-lived AI-assisted engineering work without sacrificing memory hygiene.
+
+---
+
+## Recommended checklist
+
+Use this checklist when maintaining a project memory-bank:
+
+- [ ] no API keys or tokens in memory files
+- [ ] no passwords or private credentials in memory files
+- [ ] active work lives in `.local/`
+- [ ] durable files contain only stable, shareable knowledge
+- [ ] privacy-sensitive material follows project safety guidance
+- [ ] validation and maintenance workflows are used regularly
+
+---
+
+## Related reading
+
+- [Patterns](./PATTERNS.md)
+- [Validation](./VALIDATION.md)
+- [Workflows](./WORKFLOWS.md)
+- [Manifesto](./MANIFESTO.md)
+
+---
+
+**Last updated:** 2026-03-28
