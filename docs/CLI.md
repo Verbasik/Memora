@@ -106,13 +106,11 @@ Validate another directory:
 memora validate ./my-project
 ```
 
-### Supported flags
+### Validate flags
 
-| Flag | Meaning |
-|---|---|
-| `--strict` | Promote recommended-field warnings to errors |
-| `--format text|json` | Choose human-readable or machine-readable output |
-| `--watch` | Re-run validation when memory-bank markdown files change |
+- `--strict`: Promote recommended-field warnings to errors.
+- `--format text|json`: Choose human-readable or machine-readable output.
+- `--watch`: Re-run validation when memory-bank markdown files change.
 
 ### What it validates
 
@@ -123,7 +121,7 @@ The current validator checks front matter in `memory-bank/*.md` files, including
 - recommended fields in strict mode,
 - structured reporting for local and CI use.
 
-### Common usage
+### Validate usage
 
 ```bash
 memora validate
@@ -132,7 +130,7 @@ memora validate --format json
 memora validate --watch
 ```
 
-### When to use it
+### When to run validate
 
 Use `memora validate`:
 
@@ -158,11 +156,9 @@ Inspect another directory:
 memora doctor ./my-project
 ```
 
-### Supported flags
+### Doctor flags
 
-| Flag | Meaning |
-|---|---|
-| `--format text|json` | Choose human-readable or machine-readable output |
+- `--format text|json`: Choose human-readable or machine-readable output.
 
 ### What it checks
 
@@ -179,7 +175,7 @@ memora doctor ./my-project
 - internal markdown links are not broken,
 - critical files do not still contain obvious template placeholders.
 
-### Common usage
+### Doctor usage
 
 ```bash
 memora doctor
@@ -187,7 +183,7 @@ memora doctor --format json
 memora doctor ./my-project --format json
 ```
 
-### When to use it
+### When to run doctor
 
 Use `memora doctor`:
 

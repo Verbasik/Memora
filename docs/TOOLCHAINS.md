@@ -42,13 +42,13 @@ What changes per environment is the **adapter layer**:
 
 ## Claude Code
 
-### Included adapter assets
+### Claude adapter assets
 
 - `CLAUDE.md`
 - `.claude/settings.json`
 - `.claude/skills/`
 
-### What this gives you
+### Claude capabilities
 
 - a Claude-specific entry point,
 - hook integration,
@@ -67,13 +67,13 @@ Choose Claude Code when you want:
 
 ## Codex CLI
 
-### Included adapter assets
+### Codex adapter assets
 
 - `.codex/config.toml`
 - `.agents/skills/`
 - `.codex/skills/`
 
-### What this gives you
+### Codex capabilities
 
 - Codex-specific project configuration,
 - a resolved `.agents/skills/` discovery path for Codex CLI,
@@ -92,12 +92,12 @@ Choose Codex CLI when you want:
 
 ## Qwen Code
 
-### Included adapter assets
+### Qwen adapter assets
 
 - `.qwen/settings.json`
 - `.qwen/agents/`
 
-### What this gives you
+### Qwen capabilities
 
 - Qwen-specific settings for project context,
 - a single canonical entry file: `AGENTS.md`,
@@ -116,12 +116,12 @@ Choose Qwen Code when you want:
 
 ## OpenCode
 
-### Included adapter assets
+### OpenCode adapter assets
 
 - `.opencode/plugins/`
 - `.opencode/commands/`
 
-### What this gives you
+### OpenCode capabilities
 
 - plugin-based hook integration,
 - command-style workflow files,

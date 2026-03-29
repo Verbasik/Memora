@@ -119,7 +119,7 @@ This complements `memora validate`.
 - broken internal markdown links,
 - obvious template placeholders in critical files.
 
-### Why this matters
+### Why doctor checks matter
 
 It catches the class of issues that content validation alone cannot see:
 
@@ -129,7 +129,7 @@ It catches the class of issues that content validation alone cannot see:
 - adapter drift,
 - repository health regressions.
 
-### Recommended usage
+### When to run doctor
 
 Run `memora doctor` right after `memora init`, after package install, and after moving scaffold files around.
 
@@ -139,7 +139,7 @@ Run `memora doctor` right after `memora init`, after package install, and after 
 
 Memora includes a repository-level pre-commit hook that runs validation when `memory-bank/*.md` files are staged.
 
-### Why this matters
+### Why pre-commit matters
 
 It gives teams a strong local quality gate:
 
@@ -147,7 +147,7 @@ It gives teams a strong local quality gate:
 - memory-bank hygiene becomes part of the normal developer loop,
 - validation becomes habitual instead of occasional.
 
-### Recommended usage
+### How to use the pre-commit hook
 
 Keep the hook enabled and treat it as part of normal engineering hygiene.
 
@@ -165,7 +165,7 @@ Memora also includes CI validation for repository-level quality control.
 - **Smoke Install**
 - **Markdownlint**
 
-### Why this matters
+### Why CI validation matters
 
 This gives you:
 
