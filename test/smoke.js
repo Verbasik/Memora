@@ -220,11 +220,27 @@ This fact intentionally omits provenance to exercise schema-driven validation.
   );
 }
 
+function runMissingLocalSessionScenario() {
+  const projectRoot = makeProjectDir('memora-no-local-');
+  initGitRepo(projectRoot);
+  run(node, ['bin/memora.js', 'init', projectRoot], { cwd: repoRoot });
+
+  fs.rmSync(path.join(projectRoot, 'memory-bank/.local'), { recursive: true, force: true });
+
+  const report = runValidateJson(projectRoot, ['--profile', 'core']);
+  assert.equal(report.errors.length, 0, `Core profile should tolerate missing local session files. Actual errors: ${JSON.stringify(report.errors, null, 2)}`);
+  assert.ok(
+    !report.errors.some((entry) => entry.message.includes('.local/CURRENT.md') || entry.message.includes('.local/HANDOFF.md')),
+    `Local session references should not be treated as broken links. Actual errors: ${JSON.stringify(report.errors, null, 2)}`
+  );
+}
+
 function main() {
   runInitScenario({ includeAssets: false, includeServices: false });
   runInitScenario({ includeAssets: true, includeServices: true });
   runPostinstallScenario();
   runSchemaContractScenario();
+  runMissingLocalSessionScenario();
   process.stdout.write('Smoke tests passed.\n');
 }
 
