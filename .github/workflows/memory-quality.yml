@@ -48,7 +48,7 @@ jobs:
           node-version: "20"
 
       - name: "memora validate (Core — errors block merge)"
-        run: node bin/memora.js validate --format text
+        run: node bin/memora.js validate --profile core --format text
 
   # ── Extended: all recommended fields ───────────────────────────────────────
   validate-extended:
@@ -63,12 +63,12 @@ jobs:
         with:
           node-version: "20"
 
-      - name: "memora validate --strict (Extended — advisory)"
-        run: node bin/memora.js validate --strict --format text
+      - name: "memora validate --profile extended (Extended — advisory)"
+        run: node bin/memora.js validate --profile extended --format text
         continue-on-error: true   # Extended is advisory, does not block merge
 
-      - name: "memora validate --format json (machine-readable report)"
-        run: node bin/memora.js validate --format json > /tmp/validation-report.json 2>&1 || true
+      - name: "memora validate --profile governance --format json (machine-readable report)"
+        run: node bin/memora.js validate --profile governance --format json > /tmp/validation-report.json 2>&1 || true
 
       - name: Upload validation report
         uses: actions/upload-artifact@v4

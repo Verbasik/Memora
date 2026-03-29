@@ -91,6 +91,7 @@ You can also use:
 
 ```bash
 memora validate --strict
+memora validate --profile extended
 memora validate --format json
 memora validate --watch
 memora doctor
@@ -209,6 +210,7 @@ Before commit:
 
 ```bash
 memora validate
+memora validate --profile extended
 ```
 
 ---

@@ -43,7 +43,7 @@ The main entry point is:
 memora validate
 ```
 
-This checks front matter in memory-bank markdown files.
+This now validates memory-bank contracts across schema, integrity, and operational hygiene.
 
 ### Supported modes
 
@@ -62,6 +62,16 @@ memora validate --strict
 ```
 
 Use this when you want recommended fields to be treated as required.
+
+#### Profile-driven validation
+
+```bash
+memora validate --profile core
+memora validate --profile extended
+memora validate --profile governance
+```
+
+Use profiles when you need different enforcement levels for local authoring, team review, and policy-heavy environments.
 
 #### JSON output
 
@@ -83,16 +93,16 @@ Useful during active editing.
 
 ## What gets checked
 
-The current validation model focuses on front matter and known field values.
+The current validation model covers both card contracts and repository integrity.
 
-### Required fields
-Core validation checks for the required fields that every memory file should include.
+### Schema-driven contracts
+Card-specific schemas from `schemas/` validate required fields, value types, enums, nested objects, dates, and memory-specific fields such as `confidence` and `provenance` where relevant.
 
-### Allowed values
-It also validates known enumerated values such as authority and status.
+### Cross-file integrity
+Validation checks core file presence, repository markdown links, and routing references in `INDEX.md`. Extended profiles also verify ADR/DECISIONS alignment.
 
-### Recommended fields
-In strict mode, additional recommended fields are enforced more aggressively.
+### Operational constraints
+Validation applies line limits, session-bloat checks, stale verification windows, and secret-like pattern detection. Governance profile promotes hygiene drift into blocking errors.
 
 This makes the validator practical for real authoring workflows while keeping the feedback loop fast.
 
@@ -218,6 +228,7 @@ memora validate --strict
 
 ```bash
 memora validate --format json
+memora validate --profile governance --format json
 memora doctor --format json
 ```
 
@@ -242,6 +253,7 @@ It helps memory-bank files remain assets that teams can trust, review, and maint
 ## Best practices
 
 - Run validation immediately after initialization.
+- Choose `core` for local scaffolding, `extended` for review, and `governance` for policy-enforced repos.
 - Run `memora doctor` immediately after initialization.
 - Use watch mode while editing multiple memory files.
 - Use strict mode regularly to keep metadata quality high.

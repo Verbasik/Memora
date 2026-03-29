@@ -4,7 +4,7 @@
   "title": "Memora FACT Card",
   "description": "Schema for FACTS/*.md — standalone factual assertions with provenance",
   "type": "object",
-  "required": ["title", "id", "type", "version", "authority", "status", "owner", "created_at", "pii_risk", "confidence"],
+  "required": ["title", "id", "type", "version", "authority", "status", "owner", "created_at", "pii_risk", "confidence", "provenance"],
   "properties": {
     "title":      { "type": "string", "minLength": 1 },
     "id":         { "type": "string" },

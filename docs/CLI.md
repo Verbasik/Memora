@@ -18,7 +18,7 @@ Memora currently includes three core commands:
 These three commands provide the practical base of the toolkit:
 
 - **init** gives you the scaffold,
-- **validate** gives you structural confidence.
+- **validate** gives you schema, integrity, and hygiene checks.
 - **doctor** checks that the installed scaffold is operationally healthy.
 
 ---
@@ -108,24 +108,32 @@ memora validate ./my-project
 
 ### Validate flags
 
+- `--profile core|extended|governance`: Choose how strict and comprehensive validation should be.
 - `--strict`: Promote recommended-field warnings to errors.
 - `--format text|json`: Choose human-readable or machine-readable output.
 - `--watch`: Re-run validation when memory-bank markdown files change.
 
 ### What it validates
 
-The current validator checks front matter in `memory-bank/*.md` files, including:
+`memora validate` now covers three layers:
 
-- required fields,
-- selected allowed values,
-- recommended fields in strict mode,
-- structured reporting for local and CI use.
+- schema-driven front matter validation using the JSON Schemas in `schemas/`,
+- cross-file integrity checks across `memory-bank/` and repository markdown links,
+- operational constraints such as `max_lines`, stale verification windows, and session bloat.
+
+Profiles control how much of that surface is enforced:
+
+- `core`: base schema checks plus essential integrity and hygiene warnings,
+- `extended`: adds placeholder drift and deeper cross-file checks,
+- `governance`: promotes governance-oriented warnings into blocking errors.
 
 ### Validate usage
 
 ```bash
 memora validate
 memora validate --strict
+memora validate --profile extended
+memora validate --profile governance
 memora validate --format json
 memora validate --watch
 ```
@@ -138,7 +146,7 @@ Use `memora validate`:
 - while editing memory-bank files,
 - before commits,
 - in CI,
-- when reviewing memory quality.
+- when reviewing memory quality or repository hygiene.
 
 ---
 
@@ -206,6 +214,7 @@ Useful for CI, automation, and machine-readable reporting.
 
 ```bash
 memora validate --format json
+memora validate --profile governance --format json
 memora doctor --format json
 ```
 
@@ -248,6 +257,8 @@ memora validate
 
 ```bash
 memora validate --strict --format json
+memora validate --profile extended
+memora validate --profile governance --format json
 memora doctor --format json
 ```
 
@@ -256,6 +267,7 @@ memora doctor --format json
 ## Best practices
 
 - Run `memora validate` immediately after initialization.
+- Use `core` for day-to-day authoring, `extended` for team-wide review, and `governance` for policy-heavy environments.
 - Run `memora doctor` immediately after initialization or migration.
 - Use `--watch` when editing multiple memory files.
 - Use `--strict` regularly even if your main flow starts with default validation.

@@ -39,10 +39,10 @@ Memora is especially useful when AI agents work on the same codebase across many
 Memora already provides a practical foundation for structured project memory:
 
 - deterministic scaffold delivery through a shared `scaffold.manifest.json` used by both `memora init` and `postinstall`,
-- working CLI commands for project initialization and front-matter validation: `memora init` and `memora validate`,
+- working CLI commands for project initialization and profile-driven validation: `memora init` and `memora validate`,
 - an operational health command: `memora doctor`,
 - a ready-to-use memory-bank scaffold with core files such as `PROJECT.md`, `ARCHITECTURE.md`, `CONVENTIONS.md`, `TESTING.md`, `DECISIONS.md`, `OPEN_QUESTIONS.md`, `CHANGELOG.md`, and `.local/` session state,
-- built-in validation workflow for front-matter quality, including strict mode, JSON output, and watch mode,
+- schema-driven validation for front matter, cross-file integrity, and operational hygiene, including strict mode, JSON output, watch mode, and profiles (`core`, `extended`, `governance`),
 - pre-commit validation for `memory-bank/*.md` files,
 - GitHub Actions CI for core validation, extended validation, and markdown linting,
 - deterministic advisory hooks for reflection, consolidation, and cleanup reminders,
@@ -136,6 +136,8 @@ cd ./my-project
 ```bash
 memora validate
 memora validate --strict
+memora validate --profile extended
+memora validate --profile governance
 memora validate --format json
 memora validate --watch
 memora doctor

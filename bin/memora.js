@@ -8,6 +8,7 @@ const path = require('path');
 const { execSync } = require('child_process');
 const { loadManifest, collectEntries, ensureDir, copyEntries } = require('../lib/scaffold');
 const { runDoctor } = require('../lib/doctor');
+const { runValidation, VALIDATION_PROFILES } = require('../lib/validate');
 
 function log(message) {
   process.stdout.write(message + '\n');
@@ -33,12 +34,12 @@ function buildHelp(version) {
   return `Memora CLI v${version}
 Usage:
   memora init [target-dir] [--force] [--no-init] [--include-assets] [--include-services]
-  memora validate [target-dir] [--strict] [--format text|json] [--watch]
+  memora validate [target-dir] [--profile core|extended|governance] [--strict] [--format text|json] [--watch]
   memora doctor [target-dir] [--format text|json]
 
 Commands:
   init      Initialize Memora scaffold in target directory
-  validate  Validate front-matter in all memory-bank/*.md files
+  validate  Validate schema contracts, integrity, and hygiene across memory-bank
   doctor    Check scaffold parity, operational health, and path consistency
 
 Flags (init):
@@ -48,6 +49,7 @@ Flags (init):
   --include-services  Also copy services/_template/
 
 Flags (validate):
+  --profile name       Validation profile: core | extended | governance
   --strict            Treat recommended-field warnings as errors
   --format text|json  Output format (default: text)
   --watch             Live-reload: re-validate on every .md change
@@ -59,6 +61,7 @@ Examples:
   memora init
   memora init ./myproj --force
   memora validate --strict
+  memora validate --profile governance
   memora validate ./myproj --format json
   memora doctor
   memora doctor ./myproj --format json
@@ -73,6 +76,7 @@ function parseArgs(argv) {
     noInit: false,
     includeAssets: false,
     includeServices: false,
+    profile: 'core',
     strict: false,
     format: 'text',
     watch: false
@@ -105,7 +109,8 @@ function parseArgs(argv) {
     for (let i = 1; i < rest.length; i++) {
       const arg = rest[i];
       if (!arg) continue;
-      if (arg === '--strict') args.strict = true;
+      if (arg === '--profile' && rest[i + 1]) args.profile = rest[++i];
+      else if (arg === '--strict') args.strict = true;
       else if (arg === '--watch') args.watch = true;
       else if (arg === '--format' && rest[i + 1]) args.format = rest[++i];
       else if (!arg.startsWith('-')) args.target = path.resolve(arg);
@@ -146,138 +151,15 @@ function runInitSh(target) {
   }
 }
 
-const REQUIRED_BASE = ['title', 'authority', 'status'];
-const RECOMMENDED_NEW = ['id', 'type', 'version', 'pii_risk', 'ttl', 'tags'];
-const PII_RISK_VALUES = ['none', 'low', 'medium', 'high'];
-const AUTHORITY_VALUES = ['controlled', 'immutable', 'free'];
-const STATUS_VALUES = ['active', 'draft', 'deprecated', 'proposed', 'accepted', 'superseded'];
-const SKIP_DIRS = ['.local', 'ARCHIVE', 'scripts'];
-const SKIP_NAME_PARTS = ['template', 'Template'];
-
-function extractFrontMatter(content) {
-  const match = content.match(/^---\r?\n([\s\S]*?)\r?\n---/);
-  if (!match) {
-    return null;
-  }
-
-  const fields = {};
-  for (const line of match[1].split('\n')) {
-    const parsed = line.match(/^([\w-]+)\s*:\s*(.*)/);
-    if (!parsed) continue;
-    const value = parsed[2].trim();
-    if (value === 'null' || value === '~') fields[parsed[1]] = null;
-    else if (value === 'true') fields[parsed[1]] = true;
-    else if (value === 'false') fields[parsed[1]] = false;
-    else if (value === '[]') fields[parsed[1]] = [];
-    else fields[parsed[1]] = value.replace(/^["']|["']$/g, '');
-  }
-
-  return fields;
-}
-
-function validateFile(filePath, relPath, results, opts) {
-  const content = fs.readFileSync(filePath, 'utf8');
-  const fields = extractFrontMatter(content);
-
-  if (!fields) {
-    results.skipped.push({ file: relPath, reason: 'no YAML front-matter' });
-    return;
-  }
-
-  const errors = [];
-  const warnings = [];
-
-  for (const field of REQUIRED_BASE) {
-    if (!fields[field]) {
-      errors.push(`missing required field: "${field}"`);
-    }
-  }
-
-  if (fields.authority && !AUTHORITY_VALUES.includes(fields.authority)) {
-    errors.push(`authority "${fields.authority}" must be one of: ${AUTHORITY_VALUES.join(' | ')}`);
-  }
-
-  if (fields.status && !STATUS_VALUES.includes(fields.status) && !/^\[.+\]$/.test(fields.status)) {
-    errors.push(`status "${fields.status}" must be one of: ${STATUS_VALUES.join(' | ')}`);
-  }
-
-  if (fields.pii_risk !== undefined && fields.pii_risk !== null && !PII_RISK_VALUES.includes(fields.pii_risk)) {
-    errors.push(`pii_risk "${fields.pii_risk}" must be one of: ${PII_RISK_VALUES.join(' | ')}`);
-  }
-
-  const recommendedTarget = opts.strict ? errors : warnings;
-  for (const field of RECOMMENDED_NEW) {
-    if (!(field in fields)) {
-      recommendedTarget.push(`recommended field missing: "${field}"`);
-    }
-  }
-
-  if (errors.length > 0) {
-    for (const message of errors) {
-      results.errors.push({ file: relPath, message });
-    }
-    return;
-  }
-
-  if (warnings.length > 0) {
-    for (const message of warnings) {
-      results.warnings.push({ file: relPath, message });
-    }
-    return;
-  }
-
-  results.ok.push({ file: relPath });
-}
-
-function scanDir(dirPath, results, opts) {
-  let items;
-  try {
-    items = fs.readdirSync(dirPath);
-  } catch {
-    return;
-  }
-
-  for (const item of items) {
-    if (SKIP_DIRS.includes(item)) {
-      continue;
-    }
-
-    const fullPath = path.join(dirPath, item);
-    let stat;
-    try {
-      stat = fs.statSync(fullPath);
-    } catch {
-      continue;
-    }
-
-    if (stat.isDirectory()) {
-      scanDir(fullPath, results, opts);
-      continue;
-    }
-
-    if (!item.endsWith('.md')) {
-      continue;
-    }
-
-    if (SKIP_NAME_PARTS.some((part) => item.includes(part)) || item.startsWith('_')) {
-      results.skipped.push({ file: path.relative(process.cwd(), fullPath), reason: 'template file' });
-      continue;
-    }
-
-    validateFile(fullPath, path.relative(process.cwd(), fullPath), results, opts);
-  }
-}
-
 function validateMemoryBank(target, opts) {
-  const memoryBankDir = path.join(target, 'memory-bank');
-  if (!fs.existsSync(memoryBankDir)) {
-    err(`✗ memory-bank/ not found in: ${target}`);
-    process.exit(2);
+  const pkgRoot = path.resolve(__dirname, '..');
+  let results;
+  try {
+    results = runValidation(target, pkgRoot, opts);
+  } catch (error) {
+    err(`✗ ${error.message}`);
+    process.exit(error.exitCode || 2);
   }
-
-  const results = { errors: [], warnings: [], ok: [], skipped: [] };
-  scanDir(memoryBankDir, results, opts);
-
   const total = results.errors.length + results.warnings.length + results.ok.length;
 
   if (opts.format === 'json') {
@@ -315,6 +197,7 @@ function validateMemoryBank(target, opts) {
 
   log('');
   log('─────────────────────────────────────────────────────────');
+  log(`Profile: ${results.profile}`);
   log(`Files: ${total}  │  Errors: ${results.errors.length}  │  Warnings: ${results.warnings.length}  │  Skipped: ${results.skipped.length}`);
 
   if (results.errors.length === 0) {
@@ -411,7 +294,13 @@ function main() {
   const args = parseArgs(process.argv);
 
   if (args.cmd === 'validate') {
-    const opts = { strict: args.strict, format: args.format };
+    if (!VALIDATION_PROFILES.has(args.profile)) {
+      err(`✗ Unknown validation profile: ${args.profile}`);
+      process.exit(2);
+      return;
+    }
+
+    const opts = { strict: args.strict, format: args.format, profile: args.profile };
     if (args.watch) {
       watchMemoryBank(args.target, opts);
       return;
