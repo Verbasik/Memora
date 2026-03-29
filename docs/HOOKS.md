@@ -106,6 +106,18 @@ Uses `.opencode/plugins/*.js` plugins that invoke the shell scripts.
 
 For full adapter details, see [Toolchains](./TOOLCHAINS.md).
 
+## Activation and verification
+
+When `memora init` or package `postinstall` runs inside a git repository, `init.sh` activates `.githooks/` through `git config core.hooksPath .githooks`.
+
+After installation, verify the setup with:
+
+```bash
+memora doctor
+```
+
+This checks that the pre-commit hook exists, is executable, and is wired into git.
+
 ---
 
 ## Manual testing
@@ -157,6 +169,7 @@ It turns memory maintenance into a visible operational rhythm rather than an aft
 ## Best practices
 
 - Keep the hook scripts in the repository as part of normal project setup.
+- Keep `.githooks/` activated through `core.hooksPath=.githooks`.
 - Use the default thresholds first before tuning them.
 - Test hook output directly at least once per environment.
 - Keep hook behavior advisory and predictable.

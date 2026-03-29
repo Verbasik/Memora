@@ -14,6 +14,7 @@ After completing this guide, you will have:
 - a Memora memory-bank scaffold inside your project,
 - core memory files ready to fill,
 - front-matter validation working locally,
+- an operational health check through `memora doctor`,
 - a clear path to connect your preferred AI toolchain.
 
 ---
@@ -66,9 +67,13 @@ What this gives you:
 - `CLAUDE.md`
 - `memory-bank/`
 - `schemas/`
+- `bin/`, `lib/`, and `scaffold.manifest.json`
+- `.githooks/` and `.github/workflows/`
 - toolchain adapter directories such as `.claude/`, `.codex/`, `.qwen/`, `.opencode/`
 - generated session-state files in `memory-bank/.local/`
 - helper scripts in `memory-bank/scripts/`
+
+Memora source docs in `docs/` remain in the Memora repository and are not copied into your target project.
 
 ---
 
@@ -88,6 +93,7 @@ You can also use:
 memora validate --strict
 memora validate --format json
 memora validate --watch
+memora doctor
 ```
 
 ---
@@ -165,7 +171,8 @@ Once the scaffold is in place:
 2. Read `memory-bank/INDEX.md`
 3. Fill the core files
 4. Run `memora validate`
-5. Start using the included memory workflows through your selected toolchain
+5. Run `memora doctor`
+6. Start using the included memory workflows through your selected toolchain
 
 A good first session looks like this:
 
@@ -213,6 +220,7 @@ Use this checklist to confirm your setup is healthy:
 - [ ] `memora init` completed successfully
 - [ ] `memory-bank/` exists
 - [ ] `memora validate` passes
+- [ ] `memora doctor` reports no errors
 - [ ] core project files are filled with real content
 - [ ] `AGENTS.md` and `memory-bank/INDEX.md` were reviewed
 - [ ] chosen toolchain adapter files were checked

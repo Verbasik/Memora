@@ -1,8 +1,8 @@
 {
   "permissions": {
     "allow": [
-      "Bash(wc -l /Users/me/Documents/Memora/memory-bank/*.md)",
-      "Bash(du -sh /Users/me/Documents/Memora/*/)"
+      "Bash(wc -l memory-bank/*.md)",
+      "Bash(du -sh memory-bank .claude .codex .qwen .opencode docs 2>/dev/null)"
     ],
     "deny": [
       "Read(.env*)",

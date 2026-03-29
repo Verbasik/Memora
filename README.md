@@ -38,7 +38,9 @@ Memora is especially useful when AI agents work on the same codebase across many
 
 Memora already provides a practical foundation for structured project memory:
 
+- deterministic scaffold delivery through a shared `scaffold.manifest.json` used by both `memora init` and `postinstall`,
 - working CLI commands for project initialization and front-matter validation: `memora init` and `memora validate`,
+- an operational health command: `memora doctor`,
 - a ready-to-use memory-bank scaffold with core files such as `PROJECT.md`, `ARCHITECTURE.md`, `CONVENTIONS.md`, `TESTING.md`, `DECISIONS.md`, `OPEN_QUESTIONS.md`, `CHANGELOG.md`, and `.local/` session state,
 - built-in validation workflow for front-matter quality, including strict mode, JSON output, and watch mode,
 - pre-commit validation for `memory-bank/*.md` files,
@@ -67,11 +69,11 @@ Memora is designed around reading only what is needed. The routing layer in `IND
 
 ### 3. Operational predictability
 
-The project includes deterministic advisory hooks and explicit lifecycle docs. This makes memory maintenance more visible and less dependent on agent improvisation.
+The project includes deterministic advisory hooks, a shared scaffold manifest, and explicit lifecycle docs. This makes installation and memory maintenance more visible and less dependent on agent improvisation.
 
 ### 4. Validation-first workflow
 
-Memora supports local validation, strict mode, JSON reports, live watch mode, pre-commit checks, and CI validation. This is a major strength for teams that want memory files to stay clean and consistent.
+Memora supports local validation, strict mode, JSON reports, live watch mode, `memora doctor`, pre-commit checks, and CI validation. This is a major strength for teams that want memory files to stay clean and consistent.
 
 ### 5. Cross-tool compatibility
 
@@ -136,6 +138,7 @@ memora validate
 memora validate --strict
 memora validate --format json
 memora validate --watch
+memora doctor
 ```
 
 ### 4) Fill the core project files
@@ -150,6 +153,8 @@ Start with:
 ### 5) Connect your preferred AI toolchain
 
 Memora includes adapter files for Claude Code, Codex CLI, Qwen Code, and OpenCode.
+
+`memora init` and `postinstall` copy the same scaffold entries from `scaffold.manifest.json`, including `.githooks/`, `.github/workflows/`, local `bin/`/`lib/`, and adapter directories. Repository authoring docs in `docs/` are not copied into your target project.
 
 For a step-by-step guide, see [docs/GETTING_STARTED.md](./docs/GETTING_STARTED.md).
 
@@ -172,7 +177,7 @@ For a step-by-step guide, see [docs/GETTING_STARTED.md](./docs/GETTING_STARTED.m
 
 ### Quality, patterns, and security
 
-- [Validation](./docs/VALIDATION.md) — front-matter validation, pre-commit, CI, schemas
+- [Validation](./docs/VALIDATION.md) — front-matter validation, doctor checks, pre-commit, CI, schemas
 - [Patterns](./docs/PATTERNS.md) — reusable memory and workflow patterns
 - [Security](./docs/SECURITY.md) — memory hygiene, privacy zones, safe operating practices
 - [Manifesto](./docs/MANIFESTO.md) — protocol and design philosophy behind Memora
@@ -197,6 +202,7 @@ Memora’s core advantage here is consistency: **one memory-bank architecture, m
 Memora already has a solid foundation in structure, validation, hooks, and adapters. The roadmap continues to build on these strengths:
 
 - richer schema-driven validation,
+- stronger scaffold parity and install diagnostics,
 - stronger memory quality automation,
 - more starter packs and templates,
 - broader adapter polish,

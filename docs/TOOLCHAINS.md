@@ -70,11 +70,13 @@ Choose Claude Code when you want:
 ### Included adapter assets
 
 - `.codex/config.toml`
+- `.agents/skills/`
 - `.codex/skills/`
 
 ### What this gives you
 
 - Codex-specific project configuration,
+- a resolved `.agents/skills/` discovery path for Codex CLI,
 - stop-hook integration via wrapper script,
 - workflow documents adapted to the Codex layer.
 
@@ -98,6 +100,7 @@ Choose Codex CLI when you want:
 ### What this gives you
 
 - Qwen-specific settings for project context,
+- a single canonical entry file: `AGENTS.md`,
 - hook integration,
 - workflow files adapted to the Qwen agent layer.
 

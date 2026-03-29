@@ -3,7 +3,7 @@
 # Runs before each git commit.
 # Validates front-matter in any staged memory-bank/*.md files.
 #
-# Setup (auto via `npm run prepare`):
+# Setup (auto via `init.sh` inside a git repo):
 #   git config core.hooksPath .githooks
 #
 # Manual setup:

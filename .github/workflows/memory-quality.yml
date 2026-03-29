@@ -6,12 +6,30 @@ on:
     paths:
       - "memory-bank/**"
       - "schemas/**"
+      - "lib/**"
+      - "init.sh"
+      - "scaffold.manifest.json"
+      - ".claude/**"
+      - ".codex/**"
+      - ".qwen/**"
+      - ".opencode/**"
+      - ".githooks/**"
+      - ".github/workflows/**"
       - "**.md"
       - "bin/**"
   pull_request:
     paths:
       - "memory-bank/**"
       - "schemas/**"
+      - "lib/**"
+      - "init.sh"
+      - "scaffold.manifest.json"
+      - ".claude/**"
+      - ".codex/**"
+      - ".qwen/**"
+      - ".opencode/**"
+      - ".githooks/**"
+      - ".github/workflows/**"
       - "**.md"
       - "bin/**"
 
@@ -58,6 +76,36 @@ jobs:
         with:
           name: validation-report
           path: /tmp/validation-report.json
+
+  doctor:
+    name: "🩺 Doctor"
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: memora doctor
+        run: node bin/memora.js doctor
+
+  smoke-install:
+    name: "🧪 Smoke Install"
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Run smoke tests
+        run: npm test
 
   # ── Markdown lint ───────────────────────────────────────────────────────────
   markdownlint:

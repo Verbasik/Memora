@@ -11,8 +11,8 @@ mkdir -p memory-bank/.local/SESSIONS
 mkdir -p memory-bank/scripts
 mkdir -p .claude/{skills/update-memory,skills/memory-audit,skills/memory-consolidate,skills/memory-reflect,skills/memory-gc,agents,rules}
 mkdir -p .codex/skills/{update-memory,memory-audit}
-mkdir -p .qwen/agents
-mkdir -p .opencode/commands
+mkdir -p .qwen/{agents,commands}
+mkdir -p .opencode/{commands,plugins}
 
 # ── Helper: write file only if it doesn't exist ────────────────────────────────
 write_if_missing() {
@@ -242,7 +242,12 @@ Memory bank инициализирован.
 EOF
 
 # ── Toolchain settings ─────────────────────────────────────────────────────────
-[ -f ".qwen/settings.json" ] || printf '%s\n' '{"context":{"fileName":["AGENTS.md","QWEN.md"]}}' > .qwen/settings.json
+[ -f ".qwen/settings.json" ] || printf '%s\n' '{"context":{"fileName":["AGENTS.md"]},"$version":3}' > .qwen/settings.json
+
+# ── Executable files ───────────────────────────────────────────────────────────
+chmod +x init.sh 2>/dev/null || true
+chmod +x .githooks/pre-commit 2>/dev/null || true
+find memory-bank/scripts -type f -name '*.sh' -exec chmod +x {} \; 2>/dev/null || true
 
 # ── .gitignore ─────────────────────────────────────────────────────────────────
 if [ -f .gitignore ]; then
@@ -252,18 +257,29 @@ else
   printf '# Memory bank — локальные файлы сессий\nmemory-bank/.local/\n.claude/memory/\n.qwen/memory/\n' > .gitignore
 fi
 
+# ── Git hooks ─────────────────────────────────────────────────────────────────
+HOOKS_ACTIVATED="no"
+if command -v git >/dev/null 2>&1 && git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
+  if git config core.hooksPath .githooks 2>/dev/null; then
+    HOOKS_ACTIVATED="yes"
+  fi
+fi
+
 # ── .claudeignore ──────────────────────────────────────────────────────────────
 [ -f .claudeignore ] || printf '.env\n.env.*\n*.key\n*.pem\n*.p12\n**/secrets/\n**/credentials/\n' > .claudeignore
 
 echo ""
-echo "✓ Memory Bank v3 инициализирован."
+echo "✓ Memora scaffold initialized."
 echo ""
-echo "Следующие шаги:"
-echo "  1. Скопируй AGENTS.md и CLAUDE.md в корень проекта"
-echo "  2. Скопируй skill-файлы в .claude/, .codex/, .qwen/, .opencode/"
-echo "  3. Заполни memory-bank/PROJECT.md"
-echo "  4. Заполни memory-bank/ARCHITECTURE.md"
-echo "  5. Заполни memory-bank/TESTING.md"
-echo "  6. git add AGENTS.md CLAUDE.md memory-bank/*.md memory-bank/ADR/"
-echo "  7. Скопируй скрипты в memory-bank/scripts/"
-echo "  8. Запусти: memora validate  — для проверки front-matter"
+if [ "$HOOKS_ACTIVATED" = "yes" ]; then
+  echo "✓ Git hooks activated via core.hooksPath=.githooks"
+else
+  echo "⚠ Git hooks not activated automatically (run: git config core.hooksPath .githooks)"
+fi
+echo ""
+echo "Next steps:"
+echo "  1. Fill memory-bank/PROJECT.md"
+echo "  2. Fill memory-bank/ARCHITECTURE.md"
+echo "  3. Fill memory-bank/TESTING.md"
+echo "  4. Run: memora validate"
+echo "  5. Run: memora doctor"

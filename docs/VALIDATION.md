@@ -2,7 +2,7 @@
 
 **Purpose:** explain how Memora keeps memory files structured and reviewable.  
 **Audience:** users, maintainers, contributors, CI owners.  
-**Read when:** you want the canonical view of validation, pre-commit checks, CI, and reference schemas.  
+**Read when:** you want the canonical view of validation, doctor checks, pre-commit checks, CI, and reference schemas.  
 **See also:** [CLI Reference](./CLI.md), [Getting Started](./GETTING_STARTED.md)
 
 ---
@@ -24,13 +24,14 @@ Validation is how Memora turns that principle into daily practice.
 
 ## Validation layers in Memora
 
-Memora currently provides a strong validation stack across three layers:
+Memora currently provides a strong quality stack across four layers:
 
 1. **local CLI validation**
-2. **pre-commit validation**
-3. **CI validation**
+2. **operational doctor checks**
+3. **pre-commit validation**
+4. **CI validation**
 
-These work together to keep `memory-bank/` clean and consistent.
+These work together to keep both the content and the installation surface clean and consistent.
 
 ---
 
@@ -97,7 +98,44 @@ This makes the validator practical for real authoring workflows while keeping th
 
 ---
 
-## 2. Pre-commit validation
+## 2. Operational doctor checks
+
+Memora includes an installation-health command:
+
+```bash
+memora doctor
+```
+
+This complements `memora validate`.
+
+### What `doctor` covers
+
+- manifest-driven scaffold parity,
+- `memory-bank/` presence and critical files,
+- active and executable git hooks,
+- presence of the GitHub Actions workflow,
+- toolchain adapter files,
+- hook path integrity,
+- broken internal markdown links,
+- obvious template placeholders in critical files.
+
+### Why this matters
+
+It catches the class of issues that content validation alone cannot see:
+
+- partial installs,
+- copied projects with broken paths,
+- inactive hooks,
+- adapter drift,
+- repository health regressions.
+
+### Recommended usage
+
+Run `memora doctor` right after `memora init`, after package install, and after moving scaffold files around.
+
+---
+
+## 3. Pre-commit validation
 
 Memora includes a repository-level pre-commit hook that runs validation when `memory-bank/*.md` files are staged.
 
@@ -115,7 +153,7 @@ Keep the hook enabled and treat it as part of normal engineering hygiene.
 
 ---
 
-## 3. GitHub Actions CI
+## 4. GitHub Actions CI
 
 Memora also includes CI validation for repository-level quality control.
 
@@ -123,6 +161,8 @@ Memora also includes CI validation for repository-level quality control.
 
 - **Validate — Core**
 - **Validate — Extended**
+- **Doctor**
+- **Smoke Install**
 - **Markdownlint**
 
 ### Why this matters
@@ -178,6 +218,7 @@ memora validate --strict
 
 ```bash
 memora validate --format json
+memora doctor --format json
 ```
 
 This sequence keeps validation useful without making it heavy.
@@ -201,6 +242,7 @@ It helps memory-bank files remain assets that teams can trust, review, and maint
 ## Best practices
 
 - Run validation immediately after initialization.
+- Run `memora doctor` immediately after initialization.
 - Use watch mode while editing multiple memory files.
 - Use strict mode regularly to keep metadata quality high.
 - Keep pre-commit checks enabled.
