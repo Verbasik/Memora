@@ -48,7 +48,7 @@
 
 ## Hooks (плагин)
 
-Плагин `.opencode/plugins/reflect-trigger.js` подписан на события `session.idle` и `tool.execute.after`. При достижении порога непомеченных сессий (≥ 3) выводит advisory-уведомление. Порог настраивается через `REFLECT_THRESHOLD`.
+Плагины `.opencode/plugins/reflect-trigger.js`, `.opencode/plugins/consolidate-trigger.js` и `.opencode/plugins/gc-trigger.js` подписаны на события OpenCode и запускают соответствующие shell-проверки. Пороговые значения настраиваются через `REFLECT_THRESHOLD`, `CONSOLIDATE_THRESHOLD` и `GC_THRESHOLD`.
 
 ## Безопасность
 
@@ -59,4 +59,3 @@
 
 - Агент читает слишком много: всегда идите через `INDEX.md`.
 - Нет команд: проверьте, что файлы в `.opencode/commands/` на месте и согласуйте их с вашим инструментом.
-

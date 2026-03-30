@@ -1,8 +1,7 @@
 {
   "context": {
     "fileName": [
-      "AGENTS.md",
-      "QWEN.md"
+      "AGENTS.md"
     ]
   },
   "hooks": {

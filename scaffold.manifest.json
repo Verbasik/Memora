@@ -1,0 +1,74 @@
+{
+  "toolVersion": "0.0.2",
+  "version": 1,
+  "defaultEntries": [
+    { "source": "AGENTS.md", "target": "AGENTS.md" },
+    { "source": "CLAUDE.md", "target": "CLAUDE.md" },
+    { "source": "init.sh", "target": "init.sh" },
+    { "source": "bin", "target": "bin" },
+    { "source": "lib", "target": "lib" },
+    { "source": "memory-bank", "target": "memory-bank" },
+    { "source": "schemas", "target": "schemas" },
+    { "source": ".claude", "target": ".claude" },
+    { "source": ".codex", "target": ".codex" },
+    { "source": ".qwen", "target": ".qwen" },
+    { "source": ".opencode", "target": ".opencode" },
+    { "source": ".agents", "target": ".agents" },
+    { "source": ".githooks", "target": ".githooks" },
+    { "source": ".github", "target": ".github" },
+    { "source": ".markdownlint.jsonc", "target": ".markdownlint.jsonc" },
+    { "source": "scaffold.manifest.json", "target": "scaffold.manifest.json" }
+  ],
+  "optionalEntries": {
+    "assets": [
+      { "source": "assets", "target": "assets" }
+    ],
+    "services": [
+      { "source": "services/_template", "target": "services/_template" }
+    ]
+  },
+  "doctor": {
+    "criticalFiles": [
+      "memory-bank/PROJECT.md",
+      "memory-bank/ARCHITECTURE.md",
+      "memory-bank/CONSTITUTION.md",
+      "memory-bank/CONVENTIONS.md",
+      "memory-bank/TESTING.md"
+    ],
+    "adapterFiles": [
+      "AGENTS.md",
+      "CLAUDE.md",
+      ".claude/settings.json",
+      ".codex/config.toml",
+      ".qwen/settings.json",
+      ".opencode/plugins/package.json",
+      ".agents/skills"
+    ],
+    "githookFile": ".githooks/pre-commit",
+    "ciWorkflow": ".github/workflows/memory-quality.yml",
+    "hookConfigFiles": [
+      ".claude/settings.json",
+      ".codex/config.toml",
+      ".qwen/settings.json",
+      ".opencode/plugins/reflect-trigger.js",
+      ".opencode/plugins/consolidate-trigger.js",
+      ".opencode/plugins/gc-trigger.js"
+    ],
+    "placeholderMarkers": [
+      "[Название проекта]",
+      "[project-slug]",
+      "[ГГГГ-ММ-ДД]",
+      "[URL]",
+      "[Название принципа]",
+      "[Описание принципа и почему он ненарушим.]",
+      "[Описание.]",
+      "[запрет 1]",
+      "[разрешение 1]",
+      "[module]",
+      "[date]",
+      "[name]",
+      "[что проект покрывает]",
+      "[что намеренно не делает]"
+    ]
+  }
+}

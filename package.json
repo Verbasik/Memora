@@ -6,10 +6,33 @@
   "bin": {
     "memora": "bin/memora.js"
   },
+  "files": [
+    "AGENTS.md",
+    "CLAUDE.md",
+    "README.md",
+    "LICENSE",
+    "init.sh",
+    "bin",
+    "lib",
+    "memory-bank",
+    "schemas",
+    ".claude",
+    ".codex",
+    ".qwen",
+    ".opencode",
+    ".agents",
+    ".githooks",
+    ".github",
+    ".markdownlint.jsonc",
+    "scaffold.manifest.json",
+    "assets",
+    "services",
+    "docs"
+  ],
   "scripts": {
     "postinstall": "node bin/postinstall.js",
     "prepare": "git config core.hooksPath .githooks 2>/dev/null || true",
-    "test": "node -e 'console.log(\"OK\")'"
+    "test": "node test/smoke.js"
   },
   "keywords": [
     "memora",

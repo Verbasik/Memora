@@ -6,7 +6,7 @@
 
 - Канон: `AGENTS.md` (нативно читается Codex CLI).
 - Маршрутизация: `memory-bank/INDEX.md`.
-- Skills: `.agents/skills/*/SKILL.md` (discovery path для Codex CLI, симлинки на `.codex/skills/`).
+- Skills: `.agents/skills/*/SKILL.md` (discovery path для Codex CLI, в исходном репозитории связаны с `.codex/skills/`).
 - Конфиг проекта: `.codex/config.toml` (sandbox, fallbacks).
 
 ## Требования
@@ -29,7 +29,7 @@
 ## Skills (операции с памятью)
 
 Codex CLI обнаруживает скиллы в `.agents/skills/` (не `.codex/skills/`).
-Memora использует симлинки: `.agents/skills/<name>` -> `.codex/skills/<name>/`.
+В исходном репозитории Memora `.agents/skills/<name>` связаны с `.codex/skills/<name>/`, а сгенерированный scaffold разворачивает обе поверхности из общего manifest без дополнительных ручных действий.
 
 Вызов: `$memory-bootstrap`, `$update-memory` и т.д. Или неявно — Codex подберёт нужный скилл по описанию задачи.
 
@@ -70,4 +70,3 @@ Memora использует симлинки: `.agents/skills/<name>` -> `.codex
 
 - Агент загружает слишком много: сверяйтесь с `INDEX.md`, избегайте полного чтения `memory-bank/`.
 - Навигация не работает: убедитесь, что `AGENTS.md` в корне, а `.codex/config.toml` активирован через `--trust-project`.
-
