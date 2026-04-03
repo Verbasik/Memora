@@ -2,7 +2,7 @@
 title: "MEMORY-MODEL — четырёхуровневая модель памяти"
 id: "memory-model"
 type: "LIFECYCLE"
-version: "1.0.0"
+version: "0.1.0"
 authority: "controlled"
 status: "active"
 pii_risk: "none"
@@ -32,33 +32,33 @@ max_lines: 130
 ┌─────────────────────────────────────────────────────────────────────────────┐
 │  🔒  STRUCTURAL MEMORY  ·  immutable / controlled  ·  permanent             │
 │                                                                             │
-│  CONSTITUTION.md · PROJECT.md · ARCHITECTURE.md · CONVENTIONS.md           │
+│  CONSTITUTION.md · PROJECT.md · ARCHITECTURE.md · CONVENTIONS.md            │
 │  TESTING.md                                                                 │
 │                                                                             │
-│  Кто пишет: человек + агент после human review                             │
-│  Когда меняется: редко; только осознанные изменения проекта                │
+│  Кто пишет: человек + агент после human review                              │
+│  Когда меняется: редко; только осознанные изменения проекта                 │
 ├─────────────────────────────────────────────────────────────────────────────┤
 │  💡  SEMANTIC MEMORY  ·  stable  ·  permanent                               │
 │                                                                             │
-│  FACTS/*.md · DECISIONS.md · ADR/*.md · PATTERNS/*.md · AREAS/*.md         │
-│  POLICIES/*.md · AGENTS/*.md · TESTS/*.md                                  │
+│  FACTS/*.md · DECISIONS.md · ADR/*.md · PATTERNS/*.md · AREAS/*.md          │
+│  POLICIES/*.md · AGENTS/*.md · TESTS/*.md                                   │
 │                                                                             │
-│  Кто пишет: агент через memory-consolidate / memory-reflect                │
+│  Кто пишет: агент через memory-consolidate / memory-reflect                 │
 │  Когда меняется: при появлении подтверждённых знаний (confidence ≥ inferred)│
 ├─────────────────────────────────────────────────────────────────────────────┤
-│  📖  EPISODIC MEMORY  ·  semi-stable  ·  ttl: 90d                          │
+│  📖  EPISODIC MEMORY  ·  semi-stable  ·  ttl: 90d                           │
 │                                                                             │
-│  EPISODES/*.md · OPEN_QUESTIONS.md · CHANGELOG.md                          │
+│  EPISODES/*.md · OPEN_QUESTIONS.md · CHANGELOG.md                           │
 │                                                                             │
-│  Кто пишет: агент после завершения сессии                                  │
-│  Когда меняется: после каждой значимой сессии; устаревает через 90 дней    │
+│  Кто пишет: агент после завершения сессии                                   │
+│  Когда меняется: после каждой значимой сессии; устаревает через 90 дней     │
 ├─────────────────────────────────────────────────────────────────────────────┤
-│  ⚡  SESSION MEMORY  ·  volatile  ·  gitignored  ·  ttl: 1 session         │
+│  ⚡  SESSION MEMORY  ·  volatile  ·  gitignored  ·  ttl: 1 session           │
 │                                                                             │
-│  .local/CURRENT.md  ·  .local/HANDOFF.md  ·  .local/SESSIONS/*.md         │
+│  .local/CURRENT.md  ·  .local/HANDOFF.md  ·  .local/SESSIONS/*.md           │
 │                                                                             │
-│  Кто пишет: агент в течение сессии                                         │
-│  Когда меняется: постоянно; сбрасывается между сессиями                    │
+│  Кто пишет: агент в течение сессии                                          │
+│  Когда меняется: постоянно; сбрасывается между сессиями                     │
 └─────────────────────────────────────────────────────────────────────────────┘
 ```
 

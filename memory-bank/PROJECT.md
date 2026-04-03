@@ -2,7 +2,7 @@
 title: "PROJECT — идентичность и границы проекта"
 id: "[project-slug]"
 type: "PROJECT"
-version: "1.0.0"
+version: "0.1.0"
 pii_risk: "none"
 ttl: null
 tags: []

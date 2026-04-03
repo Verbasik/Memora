@@ -2,7 +2,7 @@
 title: "EPISODES/[ГГГГ-ММ-ДД]-[slug] — [краткое описание события]"
 id: "episode-[ГГГГ-ММ-ДД]-[slug]"
 type: "EPISODE"
-version: "1.0.0"
+version: "0.1.0"
 authority: "free"
 status: "active"
 owner: "[агент]"

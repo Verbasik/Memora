@@ -1,13 +1,32 @@
-# Validation
+# ✅ Validation
 
-**Purpose:** explain how Memora keeps memory files structured and reviewable.  
-**Audience:** users, maintainers, contributors, CI owners.  
-**Read when:** you want the canonical view of validation, doctor checks, pre-commit checks, CI, and reference schemas.  
-**See also:** [CLI Reference](./CLI.md), [Getting Started](./GETTING_STARTED.md)
+**Purpose:** Explain how Memora keeps memory files structured and reviewable.  
+**Audience:** Users, maintainers, contributors, CI owners.  
+**Read when:** You want the canonical view of validation, doctor checks, pre-commit checks, CI, and reference schemas.  
+**Last updated:** 2026-04-03
+
+**See also:** [CLI Reference](./CLI.md) · [Getting Started](./GETTING_STARTED.md) · [INDEX.md](./INDEX.md)
 
 ---
 
-## Why validation matters
+## 📖 Table of Contents
+
+- [Why validation matters](#-why-validation-matters)
+- [Validation layers in Memora](#-validation-layers-in-memora)
+- [1. CLI validation](#-1-cli-validation)
+- [Validation profiles](#-validation-profiles)
+- [2. Operational doctor checks](#-2-operational-doctor-checks)
+- [3. Pre-commit validation](#-3-pre-commit-validation)
+- [4. GitHub Actions CI](#-4-github-actions-ci)
+- [Reference schemas](#-reference-schemas)
+- [Practical validation workflow](#-practical-validation-workflow)
+- [Why Memora's validation model is a strength](#-why-memoras-validation-model-is-a-strength)
+- [Best practices](#-best-practices)
+- [Navigation](#-navigation)
+
+---
+
+## 🎯 Why validation matters
 
 Memora treats project memory as an operating asset, not as loose notes.
 
@@ -22,7 +41,7 @@ Validation is how Memora turns that principle into daily practice.
 
 ---
 
-## Validation layers in Memora
+## 🏗️ Validation layers in Memora
 
 Memora currently provides a strong quality stack across four layers:
 
@@ -35,7 +54,7 @@ These work together to keep both the content and the installation surface clean 
 
 ---
 
-## 1. CLI validation
+## 📦 1. CLI validation
 
 The main entry point is:
 
@@ -73,6 +92,14 @@ memora validate --profile governance
 
 Use profiles when you need different enforcement levels for local authoring, team review, and policy-heavy environments.
 
+**Validation Profiles Comparison:**
+
+| Profile | Use case | Scope | Strictness |
+|---------|----------|-------|-----------|
+| **core** | Daily authoring & local work | Base schema, essential integrity | Warnings only |
+| **extended** | Team review, quality gates | Schema + cross-file checks + drift | Warnings + recommended fields |
+| **governance** | Policy compliance, strict CI | All of extended + governance rules | All warnings as errors |
+
 #### JSON output
 
 ```bash
@@ -91,7 +118,7 @@ Useful during active editing.
 
 ---
 
-## What gets checked
+## 🔍 What gets checked
 
 The current validation model covers both card contracts and repository integrity.
 
@@ -108,7 +135,7 @@ This makes the validator practical for real authoring workflows while keeping th
 
 ---
 
-## 2. Operational doctor checks
+## 🏥 2. Operational doctor checks
 
 Memora includes an installation-health command:
 
@@ -145,7 +172,7 @@ Run `memora doctor` right after `memora init`, after package install, and after 
 
 ---
 
-## 3. Pre-commit validation
+## 🚫 3. Pre-commit validation
 
 Memora includes a repository-level pre-commit hook that runs validation when `memory-bank/*.md` files are staged.
 
@@ -163,7 +190,7 @@ Keep the hook enabled and treat it as part of normal engineering hygiene.
 
 ---
 
-## 4. GitHub Actions CI
+## 🤖 4. GitHub Actions CI
 
 Memora also includes CI validation for repository-level quality control.
 
@@ -188,7 +215,7 @@ CI is especially useful when memory files are reviewed collaboratively.
 
 ---
 
-## Reference schemas
+## 📄 Reference schemas
 
 The repository includes a `schemas/` directory with JSON Schemas for card types such as:
 
@@ -202,7 +229,7 @@ They are especially useful when you want to understand the intended shape of dif
 
 ---
 
-## Practical validation workflow
+## ⚙️ Practical validation workflow
 
 A strong everyday workflow looks like this:
 
@@ -236,7 +263,7 @@ This sequence keeps validation useful without making it heavy.
 
 ---
 
-## Why Memora’s validation model is a strength
+## ✨ Why Memora’s validation model is a strength
 
 Memora’s validation is strong because it is:
 
@@ -250,7 +277,7 @@ It helps memory-bank files remain assets that teams can trust, review, and maint
 
 ---
 
-## Best practices
+## 💡 Best practices
 
 - Run validation immediately after initialization.
 - Choose `core` for local scaffolding, `extended` for review, and `governance` for policy-enforced repos.
@@ -259,6 +286,17 @@ It helps memory-bank files remain assets that teams can trust, review, and maint
 - Use strict mode regularly to keep metadata quality high.
 - Keep pre-commit checks enabled.
 - Treat CI validation as part of memory quality, not just markdown formatting.
+
+---
+
+## 🧭 Navigation
+
+| Link | Destination |
+|------|-------------|
+| ← Back | [WORKFLOWS.md](./WORKFLOWS.md) |
+| Next → | [HOOKS.md](./HOOKS.md) |
+
+**Other sections:** [INDEX.md](./INDEX.md) · [memory-bank/](../memory-bank/INDEX.md) · [HOME](../README.md)
 
 ---
 

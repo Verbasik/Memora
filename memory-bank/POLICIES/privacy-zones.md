@@ -2,7 +2,7 @@
 title: "POLICIES/privacy-zones — Политика зон приватности"
 id: "policy-privacy-zones"
 type: "POLICY"
-version: "1.0.0"
+version: "0.1.0"
 authority: "controlled"
 status: "active"
 owner: "все агенты"

@@ -193,7 +193,7 @@ function runSchemaContractScenario() {
 title: "Runtime Fact"
 id: "fact-runtime-contract"
 type: "FACT"
-version: "1.0.0"
+version: "0.1.0"
 authority: "controlled"
 status: "active"
 owner: "validator"

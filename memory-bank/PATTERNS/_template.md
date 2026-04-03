@@ -2,7 +2,7 @@
 title: "PATTERNS/[pattern-name] — паттерн [название]"
 id: "pattern-[slug]"
 type: "PATTERN"
-version: "1.0.0"
+version: "0.1.0"
 pii_risk: "none"
 ttl: null
 tags: []

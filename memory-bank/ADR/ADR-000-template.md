@@ -2,7 +2,7 @@
 title: "ADR-NNN — [Заголовок решения]"
 id: "adr-[NNN]-[slug]"
 type: "ADR"
-version: "1.0.0"
+version: "0.1.0"
 pii_risk: "none"
 ttl: null
 tags: []

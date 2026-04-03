@@ -2,7 +2,7 @@
 title: "Lifecycle операций с памятью"
 id: "memory-lifecycle"
 type: "LIFECYCLE"
-version: "1.0.0"
+version: "0.1.0"
 authority: "controlled"
 status: "active"
 pii_risk: "none"

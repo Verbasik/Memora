@@ -1,13 +1,32 @@
-# Memory Model
+# 🧠 Memory Model
 
-**Purpose:** explain how Memora structures project memory.  
-**Audience:** users, maintainers, architects, contributors.  
-**Read when:** you want to understand the conceptual and practical layout of the Memora memory-bank.  
-**See also:** [Workflows](./WORKFLOWS.md), [Patterns](./PATTERNS.md), [Manifesto](./MANIFESTO.md)
+**Purpose:** Explain how Memora structures project memory.  
+**Audience:** Users, maintainers, architects, contributors.  
+**Read when:** You want to understand the conceptual and practical layout of the Memora memory-bank.  
+**Last updated:** 2026-04-03
+
+**See also:** [Workflows](./WORKFLOWS.md) · [Patterns](./PATTERNS.md) · [Manifesto](./MANIFESTO.md) · [INDEX.md](./INDEX.md)
 
 ---
 
-## Overview
+## 📖 Table of Contents
+
+- [Overview](#-overview)
+- [Why a layered model?](#-why-a-layered-model)
+- [The four memory layers](#-the-four-memory-layers)
+- [Canonical ownership](#-canonical-ownership)
+- [Minimal relevant context](#-minimal-relevant-context)
+- [The role of AGENTS.md](#-the-role-of-agentsmd)
+- [The role of memory-bank/INDEX.md](#-the-role-of-memory-bankindexmd)
+- [Session state and continuity](#-session-state-and-continuity)
+- [Repository structure through the memory lens](#-repository-structure-through-the-memory-lens)
+- [How the layers work together](#-how-the-layers-work-together)
+- [Practical benefits](#-practical-benefits)
+- [Navigation](#-navigation)
+
+---
+
+## 🎯 Overview
 
 Memora gives a repository a structured memory architecture for long-lived AI coding work.
 
@@ -31,7 +50,7 @@ The goal is simple:
 
 ---
 
-## Why a layered model?
+## 🏗️ Why a layered model?
 
 Without structure, project memory tends to collapse into one of two bad patterns:
 
@@ -49,7 +68,18 @@ This gives you:
 
 ---
 
-## The four memory layers
+## 📊 The four memory layers
+
+### Quick reference
+
+| Layer | Purpose | Typical files | Lifetime |
+|-------|---------|---------------|----------|
+| **1. Structural** | Stable project framing & governance | PROJECT.md, ARCHITECTURE.md, CONVENTIONS.md, TESTING.md | ♾️ Stable |
+| **2. Semantic** | Reusable, domain-relevant knowledge | FACTS/, DECISIONS.md, ADR/, PATTERNS/, AREAS/ | ♾️ Stable |
+| **3. Episodic** | Past work records & unresolved issues | EPISODES/, OPEN_QUESTIONS.md, CHANGELOG.md | 📅 Historic |
+| **4. Session** | Active, current working state | .local/CURRENT.md, .local/HANDOFF.md, .local/SESSIONS/ | ⏱️ Ephemeral |
+
+---
 
 ### 1. Structural memory
 
@@ -128,7 +158,7 @@ This layer is intentionally separated from stable project knowledge. It gives ag
 
 ---
 
-## Canonical ownership
+## 👑 Canonical ownership
 
 One of the strongest ideas in Memora is **canonical ownership**.
 
@@ -148,7 +178,7 @@ This keeps the memory-bank readable and reduces semantic drift.
 
 ---
 
-## Minimal relevant context
+## 🎯 Minimal relevant context
 
 Memora is designed around the idea that agents should not read the whole repository by default.
 
@@ -162,7 +192,7 @@ This is one of the most important practical properties of the system: it keeps c
 
 ---
 
-## The role of `AGENTS.md`
+## 🔵 The role of `AGENTS.md`
 
 `AGENTS.md` is the main entry point for AI agents.
 
@@ -178,7 +208,7 @@ It acts as the first control surface before the agent starts loading project mem
 
 ---
 
-## The role of `memory-bank/INDEX.md`
+## 🔍 The role of `memory-bank/INDEX.md`
 
 `memory-bank/INDEX.md` is the routing table.
 
@@ -193,7 +223,7 @@ It is the practical router for minimal relevant context.
 
 ---
 
-## Session state and continuity
+## 🔄 Session state and continuity
 
 Memora isolates active session state in `.local/`.
 
@@ -209,7 +239,7 @@ This separation is one of the reasons Memora remains scalable as projects and se
 
 ---
 
-## Repository structure through the memory lens
+## 📂 Repository structure through the memory lens
 
 A typical Memora-enabled repository combines four concerns:
 
@@ -222,7 +252,7 @@ That makes the repository more than a prompt pack: it becomes a structured opera
 
 ---
 
-## How the layers work together
+## 🔗 How the layers work together
 
 A healthy Memora flow looks like this:
 
@@ -242,7 +272,7 @@ This creates a strong balance between:
 
 ---
 
-## Practical benefits
+## ✨ Practical benefits
 
 Teams using the model gain:
 
@@ -254,15 +284,24 @@ Teams using the model gain:
 
 ---
 
-## Next reading
+## 📚 Next reading
 
 To continue from the model into actual usage:
 
-- [Workflows](./WORKFLOWS.md)
-- [Patterns](./PATTERNS.md)
-- [Validation](./VALIDATION.md)
-- [Toolchains](./TOOLCHAINS.md)
+| Next Step | Purpose |
+|-----------|---------|
+| [Workflows](./WORKFLOWS.md) | Learn the 8 memory lifecycle workflows |
+| [Patterns](./PATTERNS.md) | Explore reusable patterns & techniques |
+| [Validation](./VALIDATION.md) | Understand quality assurance & profiles |
+| [Toolchains](./TOOLCHAINS.md) | Set up AI agent integration |
 
 ---
 
-**Last updated:** 2026-03-28
+## 🧭 Navigation
+
+| Link | Destination |
+|------|-------------|
+| ← Back | [CLI.md](./CLI.md) |
+| Next → | [WORKFLOWS.md](./WORKFLOWS.md) |
+
+**Other sections:** [INDEX.md](./INDEX.md) · [memory-bank/](../memory-bank/INDEX.md) · [HOME](../README.md)

@@ -1,13 +1,29 @@
-# Security
+# 🔒 Security
 
-**Purpose:** explain Memora’s approach to memory hygiene, privacy awareness, and safe operating practices.  
-**Audience:** users, maintainers, security-conscious teams.  
-**Read when:** you want to understand how Memora helps keep project memory clean and safe.  
-**See also:** [Patterns](./PATTERNS.md), [Validation](./VALIDATION.md), [Manifesto](./MANIFESTO.md)
+**Purpose:** Explain Memora’s approach to memory hygiene, privacy awareness, and safe operating practices.  
+**Audience:** Users, maintainers, security-conscious teams.  
+**Read when:** You want to understand how Memora helps keep project memory clean and safe.  
+**Last updated:** 2026-04-03
+
+**See also:** [Patterns](./PATTERNS.md) · [Validation](./VALIDATION.md) · [Manifesto](./MANIFESTO.md) · [INDEX.md](./INDEX.md)
 
 ---
 
-## Security posture
+## 📖 Table of Contents
+
+- [Security posture](#-security-posture)
+- [What should never be stored](#-what-should-never-be-stored)
+- [Why memory hygiene matters](#-why-memory-hygiene-matters)
+- [Practical safeguards already included](#-practical-safeguards-already-included)
+- [Privacy zones](#-privacy-zones)
+- [Safe operating practices](#-safe-operating-practices)
+- [Why Memora’s security approach is useful](#-why-memoras-security-approach-is-useful)
+- [Recommended checklist](#-recommended-checklist)
+- [Navigation](#-navigation)
+
+---
+
+## 🎯 Security posture
 
 Memora is designed with **memory hygiene** in mind.
 
@@ -22,7 +38,7 @@ This is one of Memora’s important practical strengths.
 
 ---
 
-## What should never be stored
+## 🚫 What should never be stored
 
 As a working rule, do not store the following in project memory:
 
@@ -37,7 +53,7 @@ Memora’s structure and guidance are designed to support that discipline.
 
 ---
 
-## Why memory hygiene matters
+## 🧼 Why memory hygiene matters
 
 Project memory can easily become a dangerous dumping ground if teams blur the boundary between:
 
@@ -54,7 +70,7 @@ Memora helps avoid that by:
 
 ---
 
-## Practical safeguards already included
+## ✅ Practical safeguards already included
 
 Memora already includes several useful memory-hygiene elements:
 
@@ -75,7 +91,7 @@ The initialization flow helps reinforce that local and sensitive session-state s
 
 ---
 
-## Privacy zones
+## 🔐 Privacy zones
 
 Memora includes a privacy-control pattern that gives teams a consistent vocabulary for handling memory sensitivity.
 
@@ -90,7 +106,7 @@ Use the privacy pattern as the main guidance surface for safe memory handling.
 
 ---
 
-## Safe operating practices
+## 💡 Safe operating practices
 
 ### Keep secrets out of memory files
 Even if the memory-bank is convenient, it is not a place for secret values.
@@ -110,7 +126,7 @@ Before durable promotion, ask whether the information is:
 
 ---
 
-## Why Memora’s security approach is useful
+## ✨ Why Memora’s security approach is useful
 
 Memora’s strength is not that it tries to become a security appliance. Its strength is that it makes safer memory behavior easier to follow through:
 
@@ -123,7 +139,7 @@ That makes the repository friendlier for teams that care about long-lived AI-ass
 
 ---
 
-## Recommended checklist
+## ✓ Recommended checklist
 
 Use this checklist when maintaining a project memory-bank:
 
@@ -136,7 +152,7 @@ Use this checklist when maintaining a project memory-bank:
 
 ---
 
-## Related reading
+## 📚 Related reading
 
 - [Patterns](./PATTERNS.md)
 - [Validation](./VALIDATION.md)
@@ -145,4 +161,11 @@ Use this checklist when maintaining a project memory-bank:
 
 ---
 
-**Last updated:** 2026-03-28
+## 🧭 Navigation
+
+| Link | Destination |
+|------|-------------|
+| ← Back | [PATTERNS.md](./PATTERNS.md) |
+| Next → | [MANIFESTO.md](./MANIFESTO.md) |
+
+**Other sections:** [INDEX.md](./INDEX.md) · [memory-bank/](../memory-bank/INDEX.md) · [HOME](../README.md)

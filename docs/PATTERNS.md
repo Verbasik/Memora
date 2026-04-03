@@ -1,13 +1,32 @@
-# Patterns
+# 🎨 Patterns
 
-**Purpose:** provide an overview of the reusable knowledge and workflow patterns included in Memora.  
-**Audience:** maintainers, users, contributors, workflow designers.  
-**Read when:** you want to understand the reusable ideas that make Memora’s memory-bank more structured and consistent.  
-**See also:** [Memory Model](./MEMORY_MODEL.md), [Workflows](./WORKFLOWS.md), [Security](./SECURITY.md)
+**Purpose:** Provide an overview of the reusable knowledge and workflow patterns included in Memora.  
+**Audience:** Maintainers, users, contributors, workflow designers.  
+**Read when:** You want to understand the reusable ideas that make Memora’s memory-bank more structured and consistent.  
+**Last updated:** 2026-04-03
+
+**See also:** [Memory Model](./MEMORY_MODEL.md) · [Workflows](./WORKFLOWS.md) · [Security](./SECURITY.md) · [INDEX.md](./INDEX.md)
 
 ---
 
-## Why patterns matter
+## 📖 Table of Contents
+
+- [Why patterns matter](#-why-patterns-matter)
+- [Included patterns](#-included-patterns)
+- [1. Observation typing](#-1-observation-typing)
+- [2. Privacy control](#-2-privacy-control)
+- [3. Confidence decay](#-3-confidence-decay)
+- [4. Agent profiles](#-4-agent-profiles)
+- [5. Progressive disclosure](#-5-progressive-disclosure)
+- [6. Provenance standard](#-6-provenance-standard)
+- [How the patterns work together](#-how-the-patterns-work-together)
+- [Practical value](#-practical-value)
+- [Where to read the full definitions](#-where-to-read-the-full-definitions)
+- [Navigation](#-navigation)
+
+---
+
+## 🎯 Why patterns matter
 
 Memora is not only a set of files and commands. It also includes reusable patterns that shape how memory should be:
 
@@ -21,7 +40,7 @@ These patterns give teams a shared vocabulary for disciplined memory work.
 
 ---
 
-## Included patterns
+## 📋 Included patterns
 
 The repository already includes patterns for:
 
@@ -36,7 +55,7 @@ These patterns are one of Memora’s strongest assets because they raise the qua
 
 ---
 
-## 1. Observation typing
+## 1️⃣ Observation typing
 
 Observation typing helps classify memory signals in a structured way.
 
@@ -57,7 +76,7 @@ Why it matters:
 
 ---
 
-## 2. Privacy control
+## 2️⃣ Privacy control
 
 Privacy control defines how sensitive content should be handled in memory workflows.
 
@@ -74,7 +93,7 @@ For full detail, see the privacy pattern in `memory-bank/PATTERNS/privacy-contro
 
 ---
 
-## 3. Confidence decay
+## 3️⃣ Confidence decay
 
 Confidence decay introduces a lifecycle for remembered facts.
 
@@ -88,7 +107,7 @@ This gives the system a more realistic model of long-lived memory quality.
 
 ---
 
-## 4. Agent profiles
+## 4️⃣ Agent profiles
 
 Agent profiles let different agent roles focus on different kinds of context and memory behavior.
 
@@ -110,7 +129,7 @@ For full detail, see `memory-bank/PATTERNS/agent-profiles.md`.
 
 ---
 
-## 5. Progressive disclosure
+## 5️⃣ Progressive disclosure
 
 Progressive disclosure is the idea that an agent should load memory in layers rather than all at once.
 
@@ -125,7 +144,7 @@ This pattern is one of the core reasons Memora stays practical for long-lived ag
 
 ---
 
-## 6. Provenance standard
+## 6️⃣ Provenance standard
 
 The provenance pattern gives memory a traceability discipline.
 
@@ -139,7 +158,7 @@ This strengthens auditability and long-term trust in project memory.
 
 ---
 
-## How the patterns work together
+## 🔗 How the patterns work together
 
 These patterns reinforce one another:
 
@@ -154,7 +173,7 @@ Together, they turn Memora into more than a folder layout: they make it a reusab
 
 ---
 
-## Practical value
+## ✨ Practical value
 
 For teams, these patterns provide:
 
@@ -167,7 +186,7 @@ For contributors, they provide a conceptual vocabulary for evolving the project 
 
 ---
 
-## Where to read the full definitions
+## 📚 Where to read the full definitions
 
 Use the overview here first, then continue into the source pattern files inside `memory-bank/PATTERNS/`.
 
@@ -179,7 +198,7 @@ Recommended next steps:
 
 ---
 
-## Related reading
+## 📖 Related reading
 
 - [Memory Model](./MEMORY_MODEL.md)
 - [Workflows](./WORKFLOWS.md)
@@ -188,4 +207,11 @@ Recommended next steps:
 
 ---
 
-**Last updated:** 2026-03-28
+## 🧭 Navigation
+
+| Link | Destination |
+|------|-------------|
+| ← Back | [TOOLCHAINS.md](./TOOLCHAINS.md) |
+| Next → | [SECURITY.md](./SECURITY.md) |
+
+**Other sections:** [INDEX.md](./INDEX.md) · [memory-bank/](../memory-bank/INDEX.md) · [HOME](../README.md)

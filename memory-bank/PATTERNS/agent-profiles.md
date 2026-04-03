@@ -2,7 +2,7 @@
 title: "PATTERN — Agent Profiles"
 id: "pattern-agent-profiles"
 type: "PATTERN"
-version: "1.0.0"
+version: "0.1.0"
 pii_risk: "none"
 ttl: null
 tags: ["agents", "profiles", "configuration", "context-loading"]

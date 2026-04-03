@@ -1,5 +1,5 @@
 {
-  "toolVersion": "0.0.2",
+  "toolVersion": "0.1.0",
   "version": 1,
   "defaultEntries": [
     { "source": "AGENTS.md", "target": "AGENTS.md" },

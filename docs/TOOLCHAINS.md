@@ -1,13 +1,30 @@
-# Toolchains
+# 🔌 Toolchains
 
-**Purpose:** explain how Memora integrates with supported AI coding environments.  
-**Audience:** users choosing a toolchain, maintainers, integrators.  
-**Read when:** you want to connect Memora to Claude Code, Codex CLI, Qwen Code, or OpenCode.  
-**See also:** [Hooks](./HOOKS.md), [Workflows](./WORKFLOWS.md), [Getting Started](./GETTING_STARTED.md)
+**Purpose:** Explain how Memora integrates with supported AI coding environments.  
+**Audience:** Users choosing a toolchain, maintainers, integrators.  
+**Read when:** You want to connect Memora to Claude Code, Codex CLI, Qwen Code, or OpenCode.  
+**Last updated:** 2026-04-03
+
+**See also:** [Hooks](./HOOKS.md) · [Workflows](./WORKFLOWS.md) · [Getting Started](./GETTING_STARTED.md) · [INDEX.md](./INDEX.md)
 
 ---
 
-## Overview
+## 📖 Table of Contents
+
+- [Overview](#-overview)
+- [Shared integration strategy](#-shared-integration-strategy)
+- [Claude Code](#-claude-code)
+- [Codex CLI](#-codex-cli)
+- [Qwen Code](#-qwen-code)
+- [OpenCode](#-opencode)
+- [Compatibility overview](#-compatibility-overview)
+- [Choosing a toolchain](#-choosing-a-toolchain)
+- [Best practices](#-best-practices)
+- [Navigation](#-navigation)
+
+---
+
+## 🎯 Overview
 
 Memora’s memory-bank model is designed to be shared across multiple AI coding toolchains.
 
@@ -21,7 +38,7 @@ In practice, that means the same project memory can be reused across several AI 
 
 ---
 
-## Shared integration strategy
+## 🏗️ Shared integration strategy
 
 All supported toolchains connect to the same core assets:
 
@@ -40,7 +57,7 @@ What changes per environment is the **adapter layer**:
 
 ---
 
-## Claude Code
+## 🔵 Claude Code
 
 ### Claude adapter assets
 
@@ -65,7 +82,7 @@ Choose Claude Code when you want:
 
 ---
 
-## Codex CLI
+## ⚙️ Codex CLI
 
 ### Codex adapter assets
 
@@ -90,7 +107,7 @@ Choose Codex CLI when you want:
 
 ---
 
-## Qwen Code
+## 🟠 Qwen Code
 
 ### Qwen adapter assets
 
@@ -114,14 +131,14 @@ Choose Qwen Code when you want:
 
 ---
 
-## OpenCode
+## 🟣 OpenCode
 
-### OpenCode adapter assets
+### 🟣 OpenCode adapter assets
 
 - `.opencode/plugins/`
 - `.opencode/commands/`
 
-### OpenCode capabilities
+### 🟣 OpenCode capabilities
 
 - plugin-based hook integration,
 - command-style workflow files,
@@ -137,7 +154,7 @@ Choose OpenCode when you want:
 
 ---
 
-## Compatibility overview
+## 🌐 Compatibility overview
 
 | Area | Claude Code | Codex CLI | Qwen Code | OpenCode |
 |---|:---:|:---:|:---:|:---:|
@@ -150,7 +167,7 @@ This is one of Memora’s strongest product properties today: **the architecture
 
 ---
 
-## Choosing a toolchain
+## 🎯 Choosing a toolchain
 
 A practical way to choose:
 
@@ -168,7 +185,7 @@ you want a plugin-driven and command-oriented integration surface.
 
 ---
 
-## Best practices
+## 💡 Best practices
 
 - Treat the memory-bank itself as the stable center of the system.
 - Treat toolchain files as adapters around that center.
@@ -185,4 +202,11 @@ you want a plugin-driven and command-oriented integration surface.
 
 ---
 
-**Last updated:** 2026-03-28
+## 🧭 Navigation
+
+| Link | Destination |
+|------|-------------|
+| ← Back | [HOOKS.md](./HOOKS.md) |
+| Next → | [PATTERNS.md](./PATTERNS.md) |
+
+**Other sections:** [INDEX.md](./INDEX.md) · [memory-bank/](../memory-bank/INDEX.md) · [HOME](../README.md)

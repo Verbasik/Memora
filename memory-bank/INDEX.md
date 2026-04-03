@@ -2,7 +2,7 @@
 title: "INDEX — таблица маршрутизации"
 id: "memory-index"
 type: "INDEX"
-version: "1.0.0"
+version: "0.1.0"
 authority: "controlled"
 status: "active"
 pii_risk: "none"

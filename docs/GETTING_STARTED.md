@@ -1,13 +1,32 @@
-# Getting Started
+# 🚀 Getting Started
 
-**Purpose:** help you get Memora running in a project quickly.  
-**Audience:** first-time users and evaluators.  
-**Read when:** you want a practical setup path with the fewest decisions.  
-**See also:** [CLI Reference](./CLI.md), [Toolchains](./TOOLCHAINS.md), [Workflows](./WORKFLOWS.md)
+**Purpose:** Help you get Memora running in a project quickly.  
+**Audience:** First-time users and evaluators.  
+**Read when:** You want a practical setup path with the fewest decisions.  
+**Last updated:** 2026-04-03
+
+**See also:** [INDEX.md](./INDEX.md) · [CLI Reference](./CLI.md) · [Toolchains](./TOOLCHAINS.md) · [Workflows](./WORKFLOWS.md)
 
 ---
 
-## What you will get
+## 📖 Table of Contents
+
+- [What you will get](#-what-you-will-get)
+- [Prerequisites](#-prerequisites)
+- [1. Install Memora](#-1-install-memora)
+- [2. Initialize a project memory-bank](#-2-initialize-a-project-memory-bank)
+- [3. Validate the scaffold](#-3-validate-the-scaffold)
+- [4. Fill the core project files](#-4-fill-the-core-project-files)
+- [5. Review the entry points](#-5-review-the-entry-points)
+- [6. Connect your preferred toolchain](#-6-connect-your-preferred-toolchain)
+- [7. Recommended first workflow](#-7-recommended-first-workflow)
+- [8. Recommended daily workflow](#-8-recommended-daily-workflow)
+- [Common first-success checklist](#-common-first-success-checklist)
+- [Next reading](#-next-reading)
+
+---
+
+## ✨ What you will get
 
 After completing this guide, you will have:
 
@@ -19,16 +38,17 @@ After completing this guide, you will have:
 
 ---
 
-## Prerequisites
+## 📋 Prerequisites
 
-You need:
-
-- Node.js `>=16`
-- `bash` (macOS/Linux; on Windows use Git Bash or WSL)
+| Requirement | Version | Notes |
+|---|---|---|
+| **Node.js** | >= 16 | [Download](https://nodejs.org/) |
+| **bash** | latest | macOS/Linux native; Windows: Git Bash or WSL |
+| **npm** | 6+ | Bundled with Node.js |
 
 ---
 
-## 1. Install Memora
+## 📦 1. Install Memora
 
 ### Local development install
 
@@ -46,7 +66,7 @@ This makes the `memora` CLI available in your shell.
 
 ---
 
-## 2. Initialize a project memory-bank
+## 🎯 2. Initialize a project memory-bank
 
 From your repository root:
 
@@ -61,23 +81,25 @@ memora init ./my-project
 cd ./my-project
 ```
 
-What this gives you:
+**What you get:**
 
-- `AGENTS.md`
-- `CLAUDE.md`
-- `memory-bank/`
-- `schemas/`
-- `bin/`, `lib/`, and `scaffold.manifest.json`
-- `.githooks/` and `.github/workflows/`
-- toolchain adapter directories such as `.claude/`, `.codex/`, `.qwen/`, `.opencode/`
-- generated session-state files in `memory-bank/.local/`
-- helper scripts in `memory-bank/scripts/`
+| Component | Purpose |
+|-----------|---------|
+| `AGENTS.md` | Agent entry contract and integration points |
+| `CLAUDE.md` | Claude Code-specific configuration |
+| `memory-bank/` | Core knowledge and session files |
+| `schemas/` | JSON schemas for validation |
+| `bin/`, `lib/` | Helper scripts and utilities |
+| `.githooks/`, `.github/workflows/` | Pre-commit checks and CI/CD |
+| `.claude/`, `.codex/`, `.qwen/`, `.opencode/` | Toolchain-specific adapters |
+| `memory-bank/.local/` | Generated session state and handoff |
+| `memory-bank/scripts/` | Helper scripts for workflows |
 
-Memora source docs in `docs/` remain in the Memora repository and are not copied into your target project.
+**Note:** Memora source docs in `docs/` remain in the Memora repository and are NOT copied into your target project.
 
 ---
 
-## 3. Validate the scaffold
+## ✅ 3. Validate the scaffold
 
 Run:
 
@@ -99,7 +121,7 @@ memora doctor
 
 ---
 
-## 4. Fill the core project files first
+## 📝 4. Fill the core project files first
 
 Start with the canonical project files:
 
@@ -119,7 +141,7 @@ These files give the agent the minimum stable context it needs to work consisten
 
 ---
 
-## 5. Review the entry points
+## 🔍 5. Review the entry points
 
 Memora’s main entry points are:
 
@@ -131,7 +153,7 @@ These files are the best way to understand how a toolchain or agent should enter
 
 ---
 
-## 6. Connect your preferred toolchain
+## 🔌 6. Connect your preferred toolchain
 
 Memora already includes toolchain-specific adapters.
 
@@ -164,7 +186,7 @@ For details, see [Toolchains](./TOOLCHAINS.md).
 
 ---
 
-## 7. Recommended first workflow
+## 🎬 7. Recommended first workflow
 
 Once the scaffold is in place:
 
@@ -187,7 +209,7 @@ Initialize memory-bank
 
 ---
 
-## 8. Recommended daily workflow
+## ⚙️ 8. Recommended daily workflow
 
 For everyday work:
 
@@ -215,7 +237,7 @@ memora validate --profile extended
 
 ---
 
-## Common first-success checklist
+## ✓ Common first-success checklist
 
 Use this checklist to confirm your setup is healthy:
 
@@ -229,15 +251,25 @@ Use this checklist to confirm your setup is healthy:
 
 ---
 
-## Next reading
+## 📚 Next reading
 
 After this guide, continue with:
 
-- [CLI Reference](./CLI.md)
-- [Memory Model](./MEMORY_MODEL.md)
-- [Validation](./VALIDATION.md)
-- [Toolchains](./TOOLCHAINS.md)
+| Next Step | Purpose |
+|-----------|---------|
+| [CLI Reference](./CLI.md) | Learn all CLI commands and flags |
+| [Memory Model](./MEMORY_MODEL.md) | Understand the 4-layer memory architecture |
+| [Validation](./VALIDATION.md) | Set up quality gates and profiles |
+| [Workflows](./WORKFLOWS.md) | Explore the 8 memory workflows |
+| [Toolchains](./TOOLCHAINS.md) | Configure your AI agent integration |
 
 ---
 
-**Last updated:** 2026-03-28
+## 🧭 Navigation
+
+| Link | Destination |
+|------|-------------|
+| ← Back | [INDEX.md](./INDEX.md) |
+| Next → | [CLI.md](./CLI.md) |
+
+**Other sections:** [memory-bank/](../memory-bank/INDEX.md) · [HOME](../README.md)

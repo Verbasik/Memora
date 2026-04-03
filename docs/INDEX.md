@@ -1,13 +1,26 @@
-# Documentation Index
+# 📚 Documentation Index
 
-**Purpose:** provide a clear map of the Memora documentation set.  
-**Audience:** users, maintainers, contributors, and AI-toolchain integrators.  
-**Read when:** you want to find the right technical document quickly.  
-**See also:** [../README.md](../README.md)
+**Purpose:** Provide a clear, role-based map of the Memora documentation set.  
+**Audience:** Users, maintainers, contributors, and AI-toolchain integrators.  
+**Read when:** You want to find the right technical document quickly.  
+**Last updated:** 2026-04-03
+
+**See also:** [../README.md](../README.md) | [../memory-bank/INDEX.md](../memory-bank/INDEX.md)
 
 ---
 
-## What to read first
+## 📖 Table of Contents
+
+- [What to read first](#-what-to-read-first)
+- [Documentation by use case](#-documentation-by-use-case)
+- [Documentation by role](#-documentation-by-role)
+- [Full document map](#-full-document-map)
+- [Product docs vs protocol docs](#-product-docs-vs-protocol-docs)
+- [Navigation](#-navigation)
+
+---
+
+## 🚀 What to read first
 
 If you are new to Memora, read in this order:
 
@@ -19,7 +32,7 @@ After that, continue based on your use case.
 
 ---
 
-## Documentation by use case
+## 🎯 Documentation by use case
 
 ### I want to get Memora running quickly
 Read:
@@ -69,7 +82,7 @@ Read:
 
 ---
 
-## Documentation by role
+## 👥 Documentation by role
 
 ### Product / engineering leads
 - [README](../README.md)
@@ -94,7 +107,7 @@ Read:
 
 ---
 
-## Full document map
+## 📋 Full document map
 
 | Document | Canonical question it answers |
 |---|---|
@@ -111,7 +124,7 @@ Read:
 
 ---
 
-## Product docs vs protocol docs
+## 🔀 Product docs vs protocol docs
 
 Memora documentation intentionally spans two layers:
 
@@ -137,4 +150,11 @@ That split is intentional: it keeps the main user path practical while preservin
 
 ---
 
-**Last updated:** 2026-03-28
+## 🧭 Navigation
+
+| Document | Link |
+|----------|------|
+| ← Back | [../README.md](../README.md) |
+| Next → | [GETTING_STARTED.md](./GETTING_STARTED.md) |
+
+**Other sections:** [memory-bank/](../memory-bank/INDEX.md) · [HOME](../README.md)

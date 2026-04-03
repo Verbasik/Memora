@@ -2,7 +2,7 @@
 title: "PATTERN — Observation Typing"
 id: "pattern-observation-typing"
 type: "PATTERN"
-version: "1.0.0"
+version: "0.1.0"
 pii_risk: "none"
 ttl: null
 tags: ["classification", "observations", "knowledge-management"]

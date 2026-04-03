@@ -1,13 +1,32 @@
-# Workflows
+# ⚙️ Workflows
 
-**Purpose:** explain the memory workflows included in the Memora repository.  
-**Audience:** users, maintainers, toolchain integrators.  
-**Read when:** you want to understand how Memora organizes session start, session update, maintenance, and cleanup workflows.  
-**See also:** [Memory Model](./MEMORY_MODEL.md), [Toolchains](./TOOLCHAINS.md), [Patterns](./PATTERNS.md)
+**Purpose:** Explain the memory workflows included in the Memora repository.  
+**Audience:** Users, maintainers, toolchain integrators.  
+**Read when:** You want to understand how Memora organizes session start, session update, maintenance, and cleanup workflows.  
+**Last updated:** 2026-04-03
+
+**See also:** [Memory Model](./MEMORY_MODEL.md) · [Toolchains](./TOOLCHAINS.md) · [Patterns](./PATTERNS.md) · [INDEX.md](./INDEX.md)
 
 ---
 
-## Overview
+## 📖 Table of Contents
+
+- [Overview](#-overview)
+- [Why workflows matter](#-why-workflows-matter)
+- [The eight workflows](#-the-eight-workflows)
+- [Session-start workflows](#-session-start-workflows)
+- [Session-update workflow](#-session-update-workflow)
+- [Quality and maintenance workflows](#-quality-and-maintenance-workflows)
+- [Consolidation and synthesis workflows](#-consolidation-and-synthesis-workflows)
+- [Cleanup workflow](#-cleanup-workflow)
+- [A practical workflow sequence](#-a-practical-workflow-sequence)
+- [Why the workflow set is valuable](#-why-the-workflow-set-is-valuable)
+- [Best practices](#-best-practices)
+- [Navigation](#-navigation)
+
+---
+
+## 🎯 Overview
 
 Memora includes documented workflows for the core stages of memory lifecycle management.
 
@@ -33,7 +52,22 @@ These are supplied through the toolchain adapter layer:
 
 ---
 
-## Why workflows matter
+## 📊 The eight workflows
+
+| Workflow | When to use | What it does |
+|----------|-------------|-------------|
+| **memory-bootstrap** | New memory-bank or template-only content | Inspect repo, fill core files, establish baseline |
+| **memory-restore** | Begin a new work session | Restore context from previous session, load .local/ |
+| **update-memory** | After completing work | Update CURRENT.md, HANDOFF.md, promote session notes |
+| **memory-audit** | Before major tasks or weekly | Check memory bank integrity, find gaps, list issues |
+| **memory-consolidate** | After 3+ sessions | Move session notes to stable EPISODES/, clean up |
+| **memory-reflect** | After consolidation | Synthesize learnings, create higher-order insights |
+| **memory-gc** | When sessions accumulate | Archive old SESSIONS/, compress CURRENT.md |
+| **memory-clarify** | When audit shows gaps | Generate targeted questions to fill knowledge gaps |
+
+---
+
+## 🏗️ Why workflows matter
 
 A memory-bank becomes much more useful when teams know:
 
@@ -47,7 +81,7 @@ The included workflow set gives Memora operational shape, not just file structur
 
 ---
 
-## Session-start workflows
+## 🚀 Session-start workflows
 
 ### `memory-bootstrap`
 
@@ -73,7 +107,7 @@ Its role is to:
 
 ---
 
-## Session-update workflow
+## 📝 Session-update workflow
 
 ### `update-memory`
 
@@ -90,7 +124,7 @@ This workflow is one of the most practical parts of the Memora operating model b
 
 ---
 
-## Quality and maintenance workflows
+## 🔧 Quality and maintenance workflows
 
 ### `memory-audit`
 
@@ -115,7 +149,7 @@ Together, `memory-audit` and `memory-clarify` help keep project memory reviewabl
 
 ---
 
-## Consolidation and synthesis workflows
+## 🔄 Consolidation and synthesis workflows
 
 ### `memory-consolidate`
 
@@ -143,7 +177,7 @@ This pair gives Memora one of its most distinctive operational strengths: it sup
 
 ---
 
-## Cleanup workflow
+## 🗑️ Cleanup workflow
 
 ### `memory-gc`
 
@@ -158,7 +192,7 @@ Its role is to:
 
 ---
 
-## A practical workflow sequence
+## 🎯 A practical workflow sequence
 
 ### First-time setup
 
@@ -195,7 +229,7 @@ memory-audit
 
 ---
 
-## Why the workflow set is valuable
+## ✨ Why the workflow set is valuable
 
 The included workflows make Memora strong in practice because they give teams:
 
@@ -208,7 +242,7 @@ This is what helps Memora behave like a memory operating model rather than just 
 
 ---
 
-## Best practices
+## 💡 Best practices
 
 - Start each session by restoring context, not by reading everything.
 - Keep current and handoff state lightweight and useful.
@@ -218,13 +252,22 @@ This is what helps Memora behave like a memory operating model rather than just 
 
 ---
 
-## Related reading
+## 📚 Related reading
 
-- [Memory Model](./MEMORY_MODEL.md)
-- [Patterns](./PATTERNS.md)
-- [Hooks](./HOOKS.md)
-- [Toolchains](./TOOLCHAINS.md)
+| Topic | Link |
+|-------|------|
+| Memory architecture | [Memory Model](./MEMORY_MODEL.md) |
+| Reusable techniques | [Patterns](./PATTERNS.md) |
+| Advisory hooks | [Hooks](./HOOKS.md) |
+| AI integrations | [Toolchains](./TOOLCHAINS.md) |
 
 ---
 
-**Last updated:** 2026-03-28
+## 🧭 Navigation
+
+| Link | Destination |
+|------|-------------|
+| ← Back | [MEMORY_MODEL.md](./MEMORY_MODEL.md) |
+| Next → | [VALIDATION.md](./VALIDATION.md) |
+
+**Other sections:** [INDEX.md](./INDEX.md) · [memory-bank/](../memory-bank/INDEX.md) · [HOME](../README.md)

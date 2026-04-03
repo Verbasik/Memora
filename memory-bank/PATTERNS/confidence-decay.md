@@ -2,7 +2,7 @@
 title: "PATTERN — Confidence Decay"
 id: "pattern-confidence-decay"
 type: "PATTERN"
-version: "1.0.0"
+version: "0.1.0"
 pii_risk: "none"
 ttl: null
 tags: ["confidence", "provenance", "quality"]

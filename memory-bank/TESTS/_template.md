@@ -2,7 +2,7 @@
 title: "TESTS/[slug] — тест-кейс [что тестируется]"
 id: "test-[slug]"
 type: "TEST"
-version: "1.0.0"
+version: "0.1.0"
 authority: "free"
 status: "active"
 owner: "[агент или роль]"

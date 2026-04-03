@@ -1,13 +1,30 @@
-# CLI Reference
+# ⌨️ CLI Reference
 
-**Purpose:** document the Memora CLI commands, flags, and usage patterns.  
-**Audience:** users, maintainers, contributors.  
-**Read when:** you want the canonical reference for `memora init`, `memora validate`, and `memora doctor`.  
-**See also:** [Getting Started](./GETTING_STARTED.md), [Validation](./VALIDATION.md)
+**Purpose:** Document the Memora CLI commands, flags, and usage patterns.  
+**Audience:** Users, maintainers, contributors.  
+**Read when:** You want the canonical reference for `memora init`, `memora validate`, and `memora doctor`.  
+**Last updated:** 2026-04-03
+
+**See also:** [Getting Started](./GETTING_STARTED.md) · [Validation](./VALIDATION.md) · [INDEX.md](./INDEX.md)
 
 ---
 
-## Overview
+## 📖 Table of Contents
+
+- [Overview](#-overview)
+- [Command summary](#-command-summary)
+- [`memora init`](#-memora-init)
+- [`memora validate`](#-memora-validate)
+- [`memora doctor`](#-memora-doctor)
+- [Output modes](#-output-modes)
+- [Typical command sequences](#-typical-command-sequences)
+- [Best practices](#-best-practices)
+- [Related repository pieces](#-related-repository-pieces)
+- [Navigation](#-navigation)
+
+---
+
+## 🎯 Overview
 
 Memora currently includes three core commands:
 
@@ -23,7 +40,7 @@ These three commands provide the practical base of the toolkit:
 
 ---
 
-## Command summary
+## 📋 Command summary
 
 | Command | Purpose |
 |---|---|
@@ -33,7 +50,7 @@ These three commands provide the practical base of the toolkit:
 
 ---
 
-## `memora init`
+## 📦 `memora init`
 
 Initialize Memora into the current directory:
 
@@ -92,7 +109,7 @@ Use `memora init` when:
 
 ---
 
-## `memora validate`
+## ✅ `memora validate`
 
 Validate the current project:
 
@@ -150,7 +167,7 @@ Use `memora validate`:
 
 ---
 
-## `memora doctor`
+## 🏥 `memora doctor`
 
 Inspect the current project:
 
@@ -202,7 +219,7 @@ Use `memora doctor`:
 
 ---
 
-## Output modes
+## 📊 Output modes
 
 ### Default text output
 
@@ -230,7 +247,7 @@ This gives a fast local feedback loop and keeps markdown structure visible durin
 
 ---
 
-## Typical command sequences
+## 🔄 Typical command sequences
 
 ### New project setup
 
@@ -264,7 +281,7 @@ memora doctor --format json
 
 ---
 
-## Best practices
+## 💡 Best practices
 
 - Run `memora validate` immediately after initialization.
 - Use `core` for day-to-day authoring, `extended` for team-wide review, and `governance` for policy-heavy environments.
@@ -275,7 +292,7 @@ memora doctor --format json
 
 ---
 
-## Related repository pieces
+## 📦 Related repository pieces
 
 The CLI works best together with:
 
@@ -289,4 +306,11 @@ For the complete quality picture, see [Validation](./VALIDATION.md).
 
 ---
 
-**Last updated:** 2026-03-28
+## 🧭 Navigation
+
+| Link | Destination |
+|------|-------------|
+| ← Back | [GETTING_STARTED.md](./GETTING_STARTED.md) |
+| Next → | [MEMORY_MODEL.md](./MEMORY_MODEL.md) |
+
+**Other sections:** [INDEX.md](./INDEX.md) · [memory-bank/](../memory-bank/INDEX.md) · [HOME](../README.md)

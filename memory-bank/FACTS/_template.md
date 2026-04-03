@@ -2,7 +2,7 @@
 title: "FACTS/[slug] — [тезис факта]"
 id: "fact-[slug]"
 type: "FACT"
-version: "1.0.0"
+version: "0.1.0"
 authority: "controlled"
 status: "active"
 owner: "[агент или роль]"

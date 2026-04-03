@@ -1,13 +1,31 @@
-# Memora Manifesto
+# 🎯 Memora Manifesto
 
-**Purpose:** explain the design philosophy behind Memora as a structured memory-bank toolkit for AI coding agents.  
-**Audience:** architects, maintainers, contributors, readers interested in the protocol layer of the project.  
-**Read when:** you want to understand the principles that shape Memora beyond the immediate user workflow.  
-**See also:** [Memory Model](./MEMORY_MODEL.md), [Patterns](./PATTERNS.md), [Security](./SECURITY.md)
+**Purpose:** Explain the design philosophy behind Memora as a structured memory-bank toolkit for AI coding agents.  
+**Audience:** Architects, maintainers, contributors, readers interested in the protocol layer of the project.  
+**Read when:** You want to understand the principles that shape Memora beyond the immediate user workflow.  
+**Last updated:** 2026-04-03
+
+**See also:** [Memory Model](./MEMORY_MODEL.md) · [Patterns](./PATTERNS.md) · [Security](./SECURITY.md) · [INDEX.md](./INDEX.md)
 
 ---
 
-## Core thesis
+## 📖 Table of Contents
+
+- [Core thesis](#-core-thesis)
+- [Why Memora exists](#-why-memora-exists)
+- [Design principles](#-design-principles)
+- [What kind of project Memora is](#-what-kind-of-project-memora-is)
+- [The role of the memory-bank](#-the-role-of-the-memory-bank)
+- [Why the workflow layer matters](#-why-the-workflow-layer-matters)
+- [Why hooks matter](#-why-hooks-matter)
+- [Why patterns matter](#-why-patterns-matter)
+- [Long-term vision](#-long-term-vision)
+- [Closing statement](#-closing-statement)
+- [Navigation](#-navigation)
+
+---
+
+## 💭 Core thesis
 
 Project memory for AI coding agents should not be treated as loose prose.
 
@@ -22,7 +40,7 @@ That is the central idea behind Memora.
 
 ---
 
-## Why Memora exists
+## 🚀 Why Memora exists
 
 As AI agents work across longer project lifetimes, teams need something more durable than:
 
@@ -35,7 +53,7 @@ Memora exists to give repositories a repeatable memory shape for long-lived AI-a
 
 ---
 
-## Design principles
+## 🏗️ Design principles
 
 ### 1. Minimal relevant context
 Agents should load only the context needed for the task at hand.
@@ -57,7 +75,7 @@ Long-lived project memory should remain clean, reviewable, and safe.
 
 ---
 
-## What kind of project Memora is
+## 📦 What kind of project Memora is
 
 Memora is best understood as a combination of:
 
@@ -70,7 +88,7 @@ That combination is what gives it practical value.
 
 ---
 
-## The role of the memory-bank
+## 🧠 The role of the memory-bank
 
 The memory-bank is the center of the system.
 
@@ -86,7 +104,7 @@ This is why the repository structure matters so much in Memora. The structure is
 
 ---
 
-## Why the workflow layer matters
+## ⚙️ Why the workflow layer matters
 
 A memory-bank without workflows becomes static documentation.
 
@@ -105,7 +123,7 @@ These workflows give memory a lifecycle, which is essential for long-lived proje
 
 ---
 
-## Why hooks matter
+## 🔔 Why hooks matter
 
 Deterministic advisory hooks are important because they create lightweight operational reminders around memory maintenance.
 
@@ -113,7 +131,7 @@ They help move memory practice from “optional good idea” to “visible engin
 
 ---
 
-## Why patterns matter
+## 🎨 Why patterns matter
 
 Patterns are how Memora becomes teachable and reusable.
 
@@ -130,7 +148,7 @@ Without patterns, the memory-bank would be harder to evolve consistently.
 
 ---
 
-## Long-term vision
+## 🌟 Long-term vision
 
 The long-term vision behind Memora is straightforward:
 
@@ -144,7 +162,7 @@ In that sense, Memora is not just about storing notes. It is about making projec
 
 ---
 
-## Closing statement
+## 🙏 Closing statement
 
 If AI agents are going to participate meaningfully in long-lived engineering work, then project memory needs stronger structure than conventional prompt text can provide.
 
@@ -152,4 +170,11 @@ Memora is a practical step in that direction.
 
 ---
 
-**Last updated:** 2026-03-28
+## 🧭 Navigation
+
+| Link | Destination |
+|------|-------------|
+| ← Back | [SECURITY.md](./SECURITY.md) |
+| Home | [INDEX.md](./INDEX.md) |
+
+**Other sections:** [memory-bank/](../memory-bank/INDEX.md) · [HOME](../README.md)

@@ -2,7 +2,7 @@
 title: "AGENTS/[slug] — профиль агента [имя]"
 id: "agent-[slug]"
 type: "AGENT"
-version: "1.0.0"
+version: "0.1.0"
 authority: "controlled"
 status: "active"
 owner: "[команда или владелец]"

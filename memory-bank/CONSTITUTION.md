@@ -2,7 +2,7 @@
 title: "CONSTITUTION — ненарушимые принципы проекта"
 id: "[project-slug]-constitution"
 type: "CONSTITUTION"
-version: "1.0.0"
+version: "0.1.0"
 pii_risk: "none"
 ttl: null
 tags: []

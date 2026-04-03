@@ -2,7 +2,7 @@
 title: "ARCHITECTURE — архитектура системы"
 id: "[project-slug]-architecture"
 type: "ARCHITECTURE"
-version: "1.0.0"
+version: "0.1.0"
 status: "active"
 pii_risk: "none"
 ttl: null

@@ -2,7 +2,7 @@
 title: "OPEN_QUESTIONS — нерешённые вопросы и пробелы"
 id: "[project-slug]-open-questions"
 type: "OPEN_QUESTIONS"
-version: "1.0.0"
+version: "0.1.0"
 pii_risk: "none"
 ttl: null
 tags: []

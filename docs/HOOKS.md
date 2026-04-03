@@ -1,13 +1,32 @@
-# Hooks
+# 🔔 Hooks
 
-**Purpose:** explain the deterministic advisory hook system included in Memora.  
-**Audience:** maintainers, toolchain integrators, advanced users.  
-**Read when:** you want to configure or understand reflection, consolidation, and cleanup reminders.  
-**See also:** [Toolchains](./TOOLCHAINS.md), [Workflows](./WORKFLOWS.md)
+**Purpose:** Explain the deterministic advisory hook system included in Memora.  
+**Audience:** Maintainers, toolchain integrators, advanced users.  
+**Read when:** You want to configure or understand reflection, consolidation, and cleanup reminders.  
+**Last updated:** 2026-04-03
+
+**See also:** [Toolchains](./TOOLCHAINS.md) · [Workflows](./WORKFLOWS.md) · [INDEX.md](./INDEX.md)
 
 ---
 
-## Why hooks matter
+## 📖 Table of Contents
+
+- [Why hooks matter](#-why-hooks-matter)
+- [Hook model](#-hook-model)
+- [Included hook scripts](#-included-hook-scripts)
+- [Thresholds](#-thresholds)
+- [Why the hooks are advisory](#-why-the-hooks-are-advisory)
+- [Per-toolchain integration](#-per-toolchain-integration)
+- [Activation and verification](#-activation-and-verification)
+- [Manual testing](#-manual-testing)
+- [Operational value](#-operational-value)
+- [Best practices](#-best-practices)
+- [Troubleshooting checklist](#-troubleshooting-checklist)
+- [Navigation](#-navigation)
+
+---
+
+## 🎯 Why hooks matter
 
 AI-agent workflows can accumulate session state quickly. Memora’s hook system makes memory maintenance visible through **deterministic advisory reminders**.
 
@@ -21,7 +40,7 @@ The hook layer is one of Memora’s strongest practical features today.
 
 ---
 
-## Hook model
+## 🏗️ Hook model
 
 At a high level:
 
@@ -43,7 +62,7 @@ This gives operational visibility without forcing intrusive automation.
 
 ---
 
-## Included hook scripts
+## 📝 Included hook scripts
 
 Memora includes three shell hooks:
 
@@ -61,7 +80,7 @@ A wrapper script used in environments that support only one stop hook command.
 
 ---
 
-## Thresholds
+## ⚙️ Thresholds
 
 The default thresholds are:
 
@@ -75,7 +94,7 @@ These defaults make the maintenance flow visible without becoming noisy.
 
 ---
 
-## Why the hooks are advisory
+## 🔵 Why the hooks are advisory
 
 Memora uses an advisory model on purpose.
 
@@ -90,7 +109,7 @@ This design is especially useful in AI-agent environments where predictability m
 
 ---
 
-## Per-toolchain integration
+## 🔌 Per-toolchain integration
 
 ### Claude Code
 Uses `.claude/settings.json` hook definitions.
@@ -106,7 +125,7 @@ Uses `.opencode/plugins/*.js` plugins that invoke the shell scripts.
 
 For full adapter details, see [Toolchains](./TOOLCHAINS.md).
 
-## Activation and verification
+## ✅ Activation and verification
 
 When `memora init` or package `postinstall` runs inside a git repository, `init.sh` activates `.githooks/` through `git config core.hooksPath .githooks`.
 
@@ -120,7 +139,7 @@ This checks that the pre-commit hook exists, is executable, and is wired into gi
 
 ---
 
-## Manual testing
+## 🧪 Manual testing
 
 You can run the scripts directly.
 
@@ -152,7 +171,7 @@ This makes the hook system easy to verify locally.
 
 ---
 
-## Operational value
+## 💡 Operational value
 
 The hook system adds real value because it:
 
@@ -166,7 +185,7 @@ It turns memory maintenance into a visible operational rhythm rather than an aft
 
 ---
 
-## Best practices
+## 💼 Best practices
 
 - Keep the hook scripts in the repository as part of normal project setup.
 - Keep `.githooks/` activated through `core.hooksPath=.githooks`.
@@ -177,7 +196,7 @@ It turns memory maintenance into a visible operational rhythm rather than an aft
 
 ---
 
-## Troubleshooting checklist
+## 🔍 Troubleshooting checklist
 
 If you do not see reminders when expected:
 
@@ -189,7 +208,7 @@ If you do not see reminders when expected:
 
 ---
 
-## Related reading
+## 📚 Related reading
 
 - [Toolchains](./TOOLCHAINS.md)
 - [Workflows](./WORKFLOWS.md)
@@ -197,4 +216,11 @@ If you do not see reminders when expected:
 
 ---
 
-**Last updated:** 2026-03-28
+## 🧭 Navigation
+
+| Link | Destination |
+|------|-------------|
+| ← Back | [VALIDATION.md](./VALIDATION.md) |
+| Next → | [TOOLCHAINS.md](./TOOLCHAINS.md) |
+
+**Other sections:** [INDEX.md](./INDEX.md) · [memory-bank/](../memory-bank/INDEX.md) · [HOME](../README.md)

@@ -2,7 +2,7 @@
 title: "PATTERN — Provenance Standard"
 id: "pattern-provenance-standard"
 type: "PATTERN"
-version: "1.0.0"
+version: "0.1.0"
 authority: controlled
 status: active
 pii_risk: "none"

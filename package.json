@@ -1,6 +1,6 @@
 {
   "name": "memora-cli",
-  "version": "0.0.2",
+  "version": "0.1.0",
   "private": false,
   "description": "CLI to initialize and validate Memora memory-bank structure in any directory",
   "bin": {

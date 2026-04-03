@@ -2,7 +2,7 @@
 title: "POLICIES/[slug] — [название политики]"
 id: "policy-[slug]"
 type: "POLICY"
-version: "1.0.0"
+version: "0.1.0"
 authority: "controlled"
 status: "active"
 owner: "[роль или команда]"
