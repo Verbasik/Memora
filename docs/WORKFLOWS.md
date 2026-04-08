@@ -71,6 +71,20 @@ Its role is to:
 - route into only the files needed for the current task,
 - keep startup context lightweight and relevant.
 
+**Layer 1.5 — Essential Story (optional)**
+
+When `.local/SESSIONS/` contains prior session files, `memory-restore` also compiles a brief Essential Story (~600 tokens): a compact summary of the last 3–5 sessions covering decisions made, discoveries, and next steps. This gives the agent a heat map of recent activity before loading canonical files, without reading every session in full.
+
+If a Temporal Knowledge Graph exists (`.local/knowledge_graph.db`), the restore step also queries current agent state and appends it to the Essential Story:
+
+```
+### Agent state (KG)
+claude → works_on: auth-migration (2026-04-08…now)
+claude → completed: memory-bank-setup, scaffold-unification
+```
+
+See [Scripts](./SCRIPTS.md) for `knowledge_graph.py` CLI reference.
+
 ---
 
 ## Session-update workflow
@@ -87,6 +101,22 @@ Its role is to:
 - promote stable knowledge when appropriate.
 
 This workflow is one of the most practical parts of the Memora operating model because it keeps active work connected to durable project memory.
+
+**Knowledge Graph updates (optional)**
+
+If `knowledge_graph.py` is available, `update-memory` also writes temporal triples recording what the agent worked on and completed:
+
+```bash
+python3 memory-bank/scripts/knowledge_graph.py add claude works_on auth-migration --from 2026-04-08
+python3 memory-bank/scripts/knowledge_graph.py add claude completed memory-bank-setup --from 2026-04-08
+python3 memory-bank/scripts/knowledge_graph.py invalidate claude works_on old-task
+```
+
+These updates keep agent state queryable across sessions without relying on full transcript reading.
+
+**Blocking save hook integration**
+
+Running `update-memory` resets the exchange counter tracked by `check-save-trigger.sh`. This unblocks any pending session stop that was held by the blocking hook. See [Hooks](./HOOKS.md) for details.
 
 ---
 
@@ -224,7 +254,8 @@ This is what helps Memora behave like a memory operating model rather than just 
 - [Patterns](./PATTERNS.md)
 - [Hooks](./HOOKS.md)
 - [Toolchains](./TOOLCHAINS.md)
+- [Scripts](./SCRIPTS.md)
 
 ---
 
-**Last updated:** 2026-03-28
+**Last updated:** 2026-04-08

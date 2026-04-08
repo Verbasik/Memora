@@ -30,34 +30,50 @@ Agent session ends
 → Stop-style event fires
 → hook script checks memory-bank session state
 → threshold is evaluated
-→ advisory reminder is shown if maintenance is due
+→ save hook blocks completion if unsaved exchanges accumulated (blocking)
+→ advisory reminders shown for reflect / consolidate / gc
 ```
 
-The important property is this:
+The hooks fall into two categories:
 
-- the hooks are **deterministic**,
-- the hooks are **non-blocking**,
-- the hooks are **advisory**.
+- **Blocking save hook** (`check-save-trigger.sh`) — prevents session close when unsaved exchanges exceed a threshold; requires the agent to run `update-memory` before continuing.
+- **Advisory hooks** (`check-reflect-trigger.sh`, `check-consolidate-trigger.sh`, `check-gc-trigger.sh`) — show maintenance reminders without blocking; the agent decides when to act.
 
-This gives operational visibility without forcing intrusive automation.
+All hooks are **deterministic**: given the same session state, they always produce the same result.
+
+This design gives you both safety (no context loss from unchecked sessions) and flexibility (maintenance timing stays under human control).
 
 ---
 
 ## Included hook scripts
 
-Memora includes three shell hooks:
+Memora includes four shell hooks plus a wrapper:
 
-### `check-reflect-trigger.sh`
+### `check-save-trigger.sh` — blocking
+
+Fires on session stop. Counts human exchanges since the last `update-memory` call.
+
+- Reads session metadata from the transcript path provided by the toolchain.
+- Tracks last-save state per session in `~/.memora/hook_state/`.
+- When unsaved exchanges reach the threshold: responds with `{"decision":"block","reason":"..."}`, which causes Claude Code to display the reason and prevent session close.
+- Once the agent runs `update-memory`, the counter resets and the session can end.
+- Guard: if `stop_hook_active=true` is set in the input JSON, the hook returns `{}` immediately to prevent infinite loops.
+
+### `check-reflect-trigger.sh` — advisory
+
 Used to remind when enough unreflected sessions have accumulated.
 
-### `check-consolidate-trigger.sh`
+### `check-consolidate-trigger.sh` — advisory
+
 Used to remind when enough unconsolidated session material exists.
 
-### `check-gc-trigger.sh`
+### `check-gc-trigger.sh` — advisory
+
 Used to remind when session files have grown large enough to justify cleanup.
 
 ### `run-stop-hooks.sh`
-A wrapper script used in environments that support only one stop hook command.
+
+A wrapper script used in environments that support only one stop hook command. Runs all advisory hooks in sequence.
 
 ---
 
@@ -65,28 +81,32 @@ A wrapper script used in environments that support only one stop hook command.
 
 The default thresholds are:
 
-| Variable | Meaning | Default |
-|---|---|---:|
-| `REFLECT_THRESHOLD` | sessions without reflection | 3 |
-| `CONSOLIDATE_THRESHOLD` | sessions without consolidation | 5 |
-| `GC_THRESHOLD` | total files in `SESSIONS/` | 20 |
+| Variable | Hook | Meaning | Default |
+|---|---|---|---:|
+| `SAVE_INTERVAL` | `check-save-trigger.sh` | human exchanges since last save | 20 |
+| `REFLECT_THRESHOLD` | `check-reflect-trigger.sh` | sessions without reflection | 3 |
+| `CONSOLIDATE_THRESHOLD` | `check-consolidate-trigger.sh` | sessions without consolidation | 5 |
+| `GC_THRESHOLD` | `check-gc-trigger.sh` | total files in `SESSIONS/` | 20 |
 
 These defaults make the maintenance flow visible without becoming noisy.
 
+Override via environment variable, e.g. `SAVE_INTERVAL=10 bash memory-bank/scripts/check-save-trigger.sh`.
+
 ---
 
-## Why the hooks are advisory
+## Why two hook types?
 
-Memora uses an advisory model on purpose.
+The split between blocking and advisory is intentional.
 
-That gives you several benefits:
+**Blocking save hook** prevents the most common failure mode in AI-agent workflows: a session ends without saving accumulated context, and the next agent starts cold. The cost of a block is low (one `update-memory` call); the cost of lost context is high.
 
-- maintenance reminders remain visible,
-- the workflow stays non-blocking,
-- teams retain control over timing,
-- behavior remains easier to understand and debug.
+**Advisory hooks** cover maintenance operations — reflection, consolidation, cleanup — where timing matters less and agent autonomy is preferable. These remind without forcing.
 
-This design is especially useful in AI-agent environments where predictability matters.
+Together they create an operational rhythm:
+
+- no context is lost involuntarily,
+- maintenance timing stays flexible and human-controlled,
+- behavior remains predictable and debuggable.
 
 ---
 
@@ -123,6 +143,15 @@ This checks that the pre-commit hook exists, is executable, and is wired into gi
 ## Manual testing
 
 You can run the scripts directly.
+
+### Save check (blocking)
+
+```bash
+echo '{"session_id":"test","stop_hook_active":false}' \
+  | bash memory-bank/scripts/check-save-trigger.sh
+```
+
+Returns `{}` (no-op) or `{"decision":"block","reason":"..."}` depending on exchange count.
 
 ### Reflection check
 
@@ -197,4 +226,4 @@ If you do not see reminders when expected:
 
 ---
 
-**Last updated:** 2026-03-28
+**Last updated:** 2026-04-08

@@ -128,6 +128,45 @@ This layer is intentionally separated from stable project knowledge. It gives ag
 
 ---
 
+### 5. Temporal Knowledge Graph (optional)
+
+For projects with multiple agents or long-running parallel work, Memora includes an optional SQLite-based knowledge graph that tracks entity state with temporal validity windows.
+
+Location: `.local/knowledge_graph.db` (not committed, local only)
+
+```text
+entities: agents, tasks, technologies, files, components
+triples:  subject → predicate → object  (valid_from … valid_to)
+```
+
+This enables queries such as:
+
+- "What is Claude working on right now?" → current triples for agent `claude`
+- "What was Kai doing on 2026-04-01?" → historical snapshot via `as_of` parameter
+- "Who completed the auth-migration task?" → reverse lookup by predicate
+
+The graph supplements `.local/CURRENT.md` with structured, queryable state. If the database does not exist, all workflows fall back gracefully to `CURRENT.md`.
+
+See [`PATTERNS/temporal-kg.md`](../memory-bank/PATTERNS/temporal-kg.md) and [Scripts](./SCRIPTS.md) for full API and CLI reference.
+
+---
+
+### Session taxonomy: Wing / Hall / Room (optional)
+
+Session files (`.local/SESSIONS/`) and episode files (`EPISODES/`) can carry optional front matter tags that classify each session into a three-level taxonomy:
+
+| Field | Meaning | Examples |
+|---|---|---|
+| `wing` | agent or domain responsible | `claude`, `codex`, `feature-auth`, `infra` |
+| `hall` | knowledge type produced | `hall_facts`, `hall_events`, `hall_discoveries`, `hall_advice` |
+| `room` | specific topic slug | `auth-migration`, `memory-bank-setup`, `stop-hooks` |
+
+These tags enable filtered retrieval — for example, "all discovery sessions in the auth domain" — and serve as the foundation for future semantic search integration.
+
+See [`PATTERNS/wing-hall-room.md`](../memory-bank/PATTERNS/wing-hall-room.md) for full specification.
+
+---
+
 ## Canonical ownership
 
 One of the strongest ideas in Memora is **canonical ownership**.
@@ -262,7 +301,8 @@ To continue from the model into actual usage:
 - [Patterns](./PATTERNS.md)
 - [Validation](./VALIDATION.md)
 - [Toolchains](./TOOLCHAINS.md)
+- [Scripts](./SCRIPTS.md)
 
 ---
 
-**Last updated:** 2026-03-28
+**Last updated:** 2026-04-08

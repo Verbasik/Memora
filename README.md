@@ -201,11 +201,21 @@ Memora’s core advantage here is consistency: **one memory-bank architecture, m
 
 ## Roadmap
 
-Memora already has a solid foundation in structure, validation, hooks, and adapters. The roadmap continues to build on these strengths:
+Memora already has a solid foundation in structure, validation, hooks, and adapters. Recent additions include:
 
+- **Blocking save hook** — prevents context loss by blocking session close until `update-memory` is called (adapted from mempalace).
+- **Layer 1.5 Essential Story** — compact auto-summary of recent sessions loaded during `memory-restore`, reducing token cost of context recovery.
+- **Wing / Hall / Room taxonomy** — optional three-level metadata for session files enabling filtered retrieval by agent, knowledge type, and topic.
+- **Entity Detection** — automatic discovery of persons and projects mentioned across the memory-bank (`scripts/entity-detect.py`).
+- **Temporal Knowledge Graph** — optional SQLite-based state tracking for multi-agent workflows; supports historical `as_of` queries without external services (`scripts/knowledge_graph.py`).
+
+The roadmap continues to build on these strengths:
+
+- deeper semantic search integration per wing / room (ChromaDB),
+- contradiction detection and fact-checking,
+- cross-agent state synchronization patterns,
 - richer schema-driven validation,
 - stronger scaffold parity and install diagnostics,
-- stronger memory quality automation,
 - more starter packs and templates,
 - broader adapter polish,
 - improved observability and maintenance tooling.

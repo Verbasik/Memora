@@ -46,6 +46,12 @@ Read:
 - [Hooks](./HOOKS.md)
 - [Toolchains](./TOOLCHAINS.md)
 
+### I want to use the knowledge graph or entity detection scripts
+Read:
+
+- [Scripts](./SCRIPTS.md)
+- [Memory Model](./MEMORY_MODEL.md)
+
 ### I want to integrate Memora with a specific AI toolchain
 Read:
 
@@ -102,7 +108,8 @@ Read:
 | [CLI.md](./CLI.md) | What does the CLI do, and how do I use it? |
 | [MEMORY_MODEL.md](./MEMORY_MODEL.md) | How is Memora’s memory-bank structured? |
 | [VALIDATION.md](./VALIDATION.md) | How does Memora keep memory files consistent and reviewable? |
-| [HOOKS.md](./HOOKS.md) | How do deterministic advisory hooks work? |
+| [HOOKS.md](./HOOKS.md) | How do the blocking save hook and advisory maintenance hooks work? |
+| [SCRIPTS.md](./SCRIPTS.md) | How do I use entity detection and the knowledge graph CLI? |
 | [TOOLCHAINS.md](./TOOLCHAINS.md) | How does Memora connect to Claude Code, Codex CLI, Qwen Code, and OpenCode? |
 | [WORKFLOWS.md](./WORKFLOWS.md) | Which memory workflows are included in the repository? |
 | [PATTERNS.md](./PATTERNS.md) | Which reusable knowledge and workflow patterns come with Memora? |
@@ -123,6 +130,7 @@ These describe what is already included in the repository and how to use it:
 - [Validation](./VALIDATION.md)
 - [Hooks](./HOOKS.md)
 - [Toolchains](./TOOLCHAINS.md)
+- [Scripts](./SCRIPTS.md)
 
 ### Protocol and architecture docs
 These describe how Memora organizes memory and agent workflows:
@@ -137,4 +145,4 @@ That split is intentional: it keeps the main user path practical while preservin
 
 ---
 
-**Last updated:** 2026-03-28
+**Last updated:** 2026-04-08
