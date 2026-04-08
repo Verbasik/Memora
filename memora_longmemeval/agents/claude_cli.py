@@ -1,7 +1,8 @@
 """
 claude_cli.py — обёртка над Claude Code CLI для headless-режима.
 
-Использует: claude -p "prompt" --allowedTools "Read,Glob"
+Использует: claude --print "prompt"
+Агент использует memory-restore skill и отвечает через ANSWER: маркер.
 """
 
 from __future__ import annotations
@@ -13,25 +14,21 @@ import subprocess
 from pathlib import Path
 
 
-# Пути где может лежать claude CLI (в порядке приоритета)
 _CLAUDE_CANDIDATES = [
-    "claude",                                          # на PATH (если есть)
-    os.path.expanduser("~/.claude/local/claude"),     # стандартный путь установки
+    "claude",
+    os.path.expanduser("~/.claude/local/claude"),
     "/usr/local/bin/claude",
     "/opt/homebrew/bin/claude",
 ]
 
 
 def _find_claude() -> str:
-    """Возвращает путь к claude CLI или поднимает RuntimeError."""
-    # Сначала пробуем shutil.which — найдёт если в PATH
     found = shutil.which("claude")
     if found:
         return found
-    # Затем известные фиксированные пути
-    for candidate in _CLAUDE_CANDIDATES[1:]:
-        if Path(candidate).exists():
-            return candidate
+    for path in _CLAUDE_CANDIDATES[1:]:
+        if Path(path).exists():
+            return path
     raise RuntimeError(
         "Claude Code CLI не найден.\n"
         "Установи: npm install -g @anthropic-ai/claude-code\n"
@@ -41,47 +38,39 @@ def _find_claude() -> str:
 
 class ClaudeAgent:
     """
-    Запускает Claude Code CLI в headless-режиме (-p/--print).
+    Запускает Claude Code CLI в headless-режиме.
 
-    Args:
-        model:          алиас модели (sonnet, opus, haiku) или полное имя
-        timeout:        таймаут на один вопрос в секундах
-        allowed_tools:  инструменты разрешённые агенту
+    Агент получает полный Memora workspace (skills, AGENTS.md, CURRENT.md с
+    индексом всех сессий) и использует memory-restore для загрузки контекста.
     """
 
     def __init__(
         self,
         model: str = "sonnet",
-        timeout: int = 120,
-        allowed_tools: str = "Read,Glob",
+        timeout: int = 180,
         binary: str | None = None,
     ):
         self.model = model
         self.timeout = timeout
-        self.allowed_tools = allowed_tools
         self._binary = binary or _find_claude()
 
-    def answer(
-        self,
-        question: str,
-        question_date: str,
-        workspace: Path,
-        mode: str = "direct",
-    ) -> str:
+    def answer(self, question: str, question_date: str, workspace: Path) -> str:
         """
-        Запускает агента в workspace и возвращает извлечённый ответ.
+        Запускает агента в workspace и возвращает ответ.
 
-        Args:
-            mode: "direct" (читать SESSIONS/ напрямую) или
-                  "memora" (использовать memory-restore skill)
+        Агент:
+        1. Запускает memory-restore (читает HANDOFF → CURRENT с индексом сессий → Essential Story)
+        2. Из CURRENT.md видит полный список всех сессий
+        3. Читает релевантные SESSIONS/*.md
+        4. Отвечает на вопрос
         """
-        prompt = _build_prompt(question, question_date, mode=mode)
+        prompt = _build_prompt(question, question_date)
 
         cmd = [
             self._binary,
             "--print",
             "--model", self.model,
-            "--allowedTools", self.allowed_tools,
+            "--allowedTools", "Read,Glob",
             "--no-session-persistence",
             prompt,
         ]
@@ -94,59 +83,42 @@ class ClaudeAgent:
                 text=True,
                 timeout=self.timeout,
             )
-            output = result.stdout.strip()
+            return _extract_answer(result.stdout)
         except subprocess.TimeoutExpired:
             return "I don't know"
         except FileNotFoundError:
-            raise RuntimeError(f"Claude CLI не найден по пути: {self._binary}")
-
-        return _extract_answer(output)
+            raise RuntimeError(f"Claude CLI не найден: {self._binary}")
 
     def __repr__(self) -> str:
-        return f"ClaudeAgent(model={self.model!r}, binary={self._binary!r})"
+        return f"ClaudeAgent(model={self.model!r})"
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-# Helpers
-# ─────────────────────────────────────────────────────────────────────────────
 
-def _build_prompt(question: str, question_date: str, mode: str = "direct") -> str:
-    if mode == "memora":
-        return f"""\
+def _build_prompt(question: str, question_date: str) -> str:
+    return f"""\
 The question was asked on {question_date}.
 
-Use memory-restore to load context from the memory bank (SESSIONS/ files contain the relevant chat history).
-After restoring context, answer the question below.
+Step 1: Run memory-restore to load context.
+  - Read memory-bank/.local/HANDOFF.md
+  - Read memory-bank/.local/CURRENT.md — it contains an index of ALL available sessions
+  - Based on the session index in CURRENT.md, identify which sessions are relevant
+  - Read those session files from memory-bank/.local/SESSIONS/
 
-Output ONLY your final answer in this exact format: ANSWER: <your answer>
+Step 2: Answer the question based on the loaded context.
 
-Question: {question}"""
-    else:
-        return f"""\
-The question was asked on {question_date}.
-
-Instructions:
-1. Use Glob to list all files in memory-bank/.local/SESSIONS/
-2. Use Read to read each session file
-3. Based on the sessions, answer the question below
-4. Output ONLY your final answer in this exact format: ANSWER: <your answer>
+Output ONLY: ANSWER: <your answer>
+If the information is not found: ANSWER: I don't know
 
 Question: {question}"""
 
 
 def _extract_answer(output: str) -> str:
-    """Извлекает ответ из вывода CLI после маркера ANSWER:"""
-    # Ищем последний ANSWER: в выводе (агент может рассуждать до этого)
     matches = re.findall(r"ANSWER:\s*(.+?)(?:\n|$)", output, re.IGNORECASE)
     if matches:
         return matches[-1].strip()
-
-    # Fallback: последняя непустая строка
     lines = [l.strip() for l in output.splitlines() if l.strip()]
     if lines:
-        last = lines[-1]
-        # Убираем markdown-артефакты
-        last = re.sub(r"^[*_`#>]+|[*_`]+$", "", last).strip()
-        return last if last else "I don't know"
-
+        last = re.sub(r"^[*_`#>]+|[*_`]+$", "", lines[-1]).strip()
+        return last or "I don't know"
     return "I don't know"

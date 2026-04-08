@@ -1,9 +1,8 @@
 """
-workspace.py — создаёт изолированный Memora workspace для одного вопроса LongMemEval
+workspace.py — изолированный Memora workspace для одного вопроса LongMemEval.
 
-Два режима:
-    mode="direct"  — агент читает SESSIONS/*.md напрямую (baseline)
-    mode="memora"  — агент использует memory-restore skill (настоящий Memora)
+Workspace — полноценная копия Memora: skills, AGENTS.md, PATTERNS/, INDEX.md.
+Агент использует memory-restore для загрузки контекста и отвечает на вопрос.
 """
 
 from __future__ import annotations
@@ -12,45 +11,34 @@ import shutil
 import tempfile
 from pathlib import Path
 
-# Корень репозитория Memora (relative to this file)
 MEMORA_ROOT = Path(__file__).parent.parent
 
 
-# ─────────────────────────────────────────────────────────────────────────────
-# Public API
-# ─────────────────────────────────────────────────────────────────────────────
-
 class MemoraWorkspace:
     """
-    Временный workspace с минимальной структурой Memora.
-    Использовать как context manager:
+    Временный Memora workspace с полным набором компонентов.
 
-        with MemoraWorkspace(mode="memora") as ws:
-            ws.sessions_dir  # Path к .local/SESSIONS/
-            ws.path          # Path к корню workspace
-            ws.mode          # "direct" | "memora"
+    Содержит:
+      - .claude/skills/  (memory-restore, update-memory, и др.)
+      - AGENTS.md        (entry point для агента)
+      - CLAUDE.md        (указывает на AGENTS.md)
+      - memory-bank/     (INDEX.md, PATTERNS/, .local/SESSIONS/)
 
-    Режимы:
-        "direct" — минимальный workspace, агент читает файлы напрямую (baseline)
-        "memora" — полный workspace со skills, агент использует memory-restore
+    Использование:
+        with MemoraWorkspace() as ws:
+            ws.sessions_dir   # Path к .local/SESSIONS/
+            ws.path           # Path к корню workspace
+            ws.kg_path        # Path к knowledge_graph.db
     """
 
-    def __init__(self, mode: str = "direct", keep: bool = False):
-        """
-        Args:
-            mode: "direct" (baseline) или "memora" (настоящий Memora)
-            keep: не удалять workspace после выхода (для отладки)
-        """
-        assert mode in ("direct", "memora"), f"Неизвестный режим: {mode}"
-        self.mode = mode
+    def __init__(self, keep: bool = False):
+        """keep=True — не удалять после выхода (для отладки)."""
         self._keep = keep
         self._tmpdir: tempfile.TemporaryDirectory | None = None
         self.path: Path | None = None
 
-    # ── context manager ───────────────────────────────────────────────────────
-
     def __enter__(self) -> "MemoraWorkspace":
-        self._tmpdir = tempfile.TemporaryDirectory(prefix=f"memora_lme_{self.mode}_")
+        self._tmpdir = tempfile.TemporaryDirectory(prefix="memora_lme_")
         self.path = Path(self._tmpdir.name)
         self._setup()
         return self
@@ -66,99 +54,62 @@ class MemoraWorkspace:
         return self.path / "memory-bank" / ".local" / "SESSIONS"
 
     @property
-    def memory_bank_dir(self) -> Path:
-        return self.path / "memory-bank"
+    def local_dir(self) -> Path:
+        return self.path / "memory-bank" / ".local"
+
+    @property
+    def kg_path(self) -> Path:
+        return self.local_dir / "knowledge_graph.db"
 
     # ── setup ─────────────────────────────────────────────────────────────────
 
     def _setup(self):
-        """Создаёт структуру Memora в tmpdir согласно режиму."""
+        # Директории
         self.sessions_dir.mkdir(parents=True, exist_ok=True)
-        (self.path / "memory-bank" / ".local").mkdir(parents=True, exist_ok=True)
 
-        # INDEX.md — всегда нужен для маршрутизации
+        # CLAUDE.md → указывает агента на AGENTS.md
+        (self.path / "CLAUDE.md").write_text(_CLAUDE_MD, encoding="utf-8")
+
+        # AGENTS.md
+        src = MEMORA_ROOT / "AGENTS.md"
+        if src.exists():
+            shutil.copy(src, self.path / "AGENTS.md")
+
+        # .claude/skills/ — все skills
+        src_skills = MEMORA_ROOT / ".claude" / "skills"
+        if src_skills.exists():
+            shutil.copytree(src_skills, self.path / ".claude" / "skills")
+
+        # .claude/rules/
+        src_rules = MEMORA_ROOT / ".claude" / "rules"
+        if src_rules.exists():
+            shutil.copytree(src_rules, self.path / ".claude" / "rules")
+
+        # memory-bank/INDEX.md
         src_index = MEMORA_ROOT / "memory-bank" / "INDEX.md"
         if src_index.exists():
-            shutil.copy(src_index, self.path / "memory-bank" / "INDEX.md")
+            dst_mb = self.path / "memory-bank"
+            dst_mb.mkdir(exist_ok=True)
+            shutil.copy(src_index, dst_mb / "INDEX.md")
 
-        # CURRENT.md и HANDOFF.md — пустые (нет предыдущей сессии)
-        (self.path / "memory-bank" / ".local" / "CURRENT.md").write_text(
-            "# Current\n\n(benchmark session — no prior tasks)\n", encoding="utf-8"
-        )
-        (self.path / "memory-bank" / ".local" / "HANDOFF.md").write_text(
-            "# Handoff\n\n(benchmark session — no prior handoff)\n", encoding="utf-8"
-        )
-
-        if self.mode == "direct":
-            self._setup_direct()
-        else:
-            self._setup_memora()
-
-    def _setup_direct(self):
-        """Baseline: CLAUDE.md говорит агенту читать SESSIONS/ напрямую."""
-        (self.path / "CLAUDE.md").write_text(_CLAUDE_MD_DIRECT, encoding="utf-8")
-
-    def _setup_memora(self):
-        """
-        Настоящий Memora: копирует skills и AGENTS.md из репозитория.
-        Агент будет использовать memory-restore для загрузки контекста.
-        """
-        # CLAUDE.md → указывает на AGENTS.md (стандартный Memora entry point)
-        (self.path / "CLAUDE.md").write_text(_CLAUDE_MD_MEMORA, encoding="utf-8")
-
-        # Копируем AGENTS.md
-        src_agents = MEMORA_ROOT / "AGENTS.md"
-        if src_agents.exists():
-            shutil.copy(src_agents, self.path / "AGENTS.md")
-
-        # Копируем skills (.claude/skills/)
-        src_skills = MEMORA_ROOT / ".claude" / "skills"
-        dst_skills = self.path / ".claude" / "skills"
-        if src_skills.exists():
-            shutil.copytree(src_skills, dst_skills, dirs_exist_ok=True)
-
-        # Копируем rules (.claude/rules/)
-        src_rules = MEMORA_ROOT / ".claude" / "rules"
-        dst_rules = self.path / ".claude" / "rules"
-        if src_rules.exists():
-            shutil.copytree(src_rules, dst_rules, dirs_exist_ok=True)
-
-        # Копируем ключевые PATTERNS (нужны skills)
+        # memory-bank/PATTERNS/
         src_patterns = MEMORA_ROOT / "memory-bank" / "PATTERNS"
-        dst_patterns = self.path / "memory-bank" / "PATTERNS"
         if src_patterns.exists():
-            shutil.copytree(src_patterns, dst_patterns, dirs_exist_ok=True)
+            shutil.copytree(src_patterns, self.path / "memory-bank" / "PATTERNS")
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-# CLAUDE.md шаблоны
+# CLAUDE.md
 # ─────────────────────────────────────────────────────────────────────────────
 
-_CLAUDE_MD_DIRECT = """\
-# LongMemEval Benchmark — Direct Mode
-
-## Task
-Answer a question based on stored chat sessions.
-
-## Instructions
-1. Use Glob to list all files in `memory-bank/.local/SESSIONS/`
-2. Use Read to read each session file
-3. Answer the question
-4. Output ONLY: `ANSWER: <your answer>`
-
-## Rules
-- Read ONLY files from `memory-bank/.local/SESSIONS/`
-- If unsure: `ANSWER: I don't know`
-- Keep the answer brief (1-2 sentences)
-"""
-
-_CLAUDE_MD_MEMORA = """\
-# LongMemEval Benchmark — Memora Mode
+_CLAUDE_MD = """\
+# Memora — LongMemEval Benchmark
 
 Read and follow all instructions from AGENTS.md.
 Read memory-bank/INDEX.md for navigation.
 
 ## Benchmark task
 After restoring context with memory-restore, answer the user's question.
-Output ONLY: `ANSWER: <your answer>`
+Output ONLY the answer in this format: `ANSWER: <your answer>`
+If uncertain: `ANSWER: I don't know`
 """
