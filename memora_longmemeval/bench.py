@@ -222,15 +222,17 @@ def _run_sequential(
             meta = ingest(item=item, workspace_path=ws.path, sessions_dir=ws.sessions_dir)
 
             # ── Фаза 2: Query ──────────────────────────────────────────────
-            hypothesis = agent.answer(
+            hypothesis, trace = agent.answer(
                 question=question,
                 question_date=question_date,
                 workspace=ws.path,
             )
 
         elapsed = time.time() - t0
-        print(f"        A: {hypothesis[:90]}{'…' if len(hypothesis) > 90 else ''}")
-        print(f"        sessions={meta['n_sessions']} kg_triples={meta['n_kg_triples']} time={elapsed:.1f}s\n")
+        memora_tag = " ✓memora" if trace.get("memora_used") else " ✗memora"
+        print(f"        A: {hypothesis[:90]}{'…' if len(hypothesis) > 90 else ''}{memora_tag}")
+        print(f"        sessions={meta['n_sessions']} kg={meta['n_kg_triples']} "
+              f"reads={trace.get('sessions_read', 0)} time={elapsed:.1f}s\n")
 
         results.append({
             "question_id": qid,
@@ -239,6 +241,10 @@ def _run_sequential(
             "elapsed_s": round(elapsed, 2),
             "n_sessions": meta["n_sessions"],
             "n_kg_triples": meta["n_kg_triples"],
+            "memora_used": trace.get("memora_used", False),
+            "sessions_read": trace.get("sessions_read", 0),
+            "read_handoff": trace.get("read_handoff", False),
+            "read_current": trace.get("read_current", False),
         })
 
     return results
@@ -261,7 +267,7 @@ def _run_concurrent(
         t0 = time.time()
         with MemoraWorkspace() as ws:
             meta = ingest(item=item, workspace_path=ws.path, sessions_dir=ws.sessions_dir)
-            hypothesis = agent.answer(
+            hypothesis, trace = agent.answer(
                 question=item["question"],
                 question_date=item.get("question_date", "unknown"),
                 workspace=ws.path,
@@ -273,6 +279,10 @@ def _run_concurrent(
             "elapsed_s": round(time.time() - t0, 2),
             "n_sessions": meta["n_sessions"],
             "n_kg_triples": meta["n_kg_triples"],
+            "memora_used": trace.get("memora_used", False),
+            "sessions_read": trace.get("sessions_read", 0),
+            "read_handoff": trace.get("read_handoff", False),
+            "read_current": trace.get("read_current", False),
         }
 
     output_path = Path(args.output) if args.output else Path(
@@ -318,11 +328,17 @@ def _print_done(results: list[dict], output_path: Path, data_path: Path):
     for r in results:
         by_type[r["question_type"]] += 1
 
+    memora_used = sum(1 for r in results if r.get("memora_used"))
+    memora_pct = memora_used / total * 100 if total else 0
+    avg_sessions_read = sum(r.get("sessions_read", 0) for r in results) / total if total else 0
+
     print(f"{'─'*60}")
     print(f"  Вопросов обработано: {total}")
     print(f"  Avg time/вопрос:     {avg_t:.1f}s")
     print(f"  Общее время:         {total_t/60:.1f} мин")
     print(f"  Avg KG triples:      {avg_kg:.1f}")
+    print(f"  Memora usage:        {memora_used}/{total} ({memora_pct:.1f}%)")
+    print(f"  Avg sessions read:   {avg_sessions_read:.1f}")
     print(f"  По типам:            {dict(sorted(by_type.items()))}")
     print(f"{'─'*60}")
     print(f"\n[DONE] → {output_path}")

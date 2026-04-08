@@ -14,7 +14,7 @@ class CodexAgent:
         self.model = model
         self.timeout = timeout
 
-    def answer(self, question: str, question_date: str, workspace: Path) -> str:
+    def answer(self, question: str, question_date: str, workspace: Path) -> tuple[str, dict]:
         prompt = _build_prompt(question, question_date)
         cmd = ["codex", "--full-auto", "--quiet", "--model", self.model, prompt]
         try:
@@ -22,9 +22,14 @@ class CodexAgent:
                 cmd, cwd=str(workspace), capture_output=True,
                 text=True, timeout=self.timeout,
             )
-            return _extract_answer(result.stdout)
+            hypothesis = _extract_answer(result.stdout)
+            # Codex CLI doesn't expose tool calls in structured format — trace is empty
+            trace = {"read_handoff": False, "read_current": False,
+                     "sessions_read": 0, "files_read": [], "memora_used": False}
+            return hypothesis, trace
         except subprocess.TimeoutExpired:
-            return "I don't know"
+            return "I don't know", {"read_handoff": False, "read_current": False,
+                                    "sessions_read": 0, "files_read": [], "memora_used": False}
         except FileNotFoundError:
             raise RuntimeError("Codex CLI не найден. Установи: npm install -g @openai/codex")
 
