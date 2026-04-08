@@ -77,9 +77,10 @@ class ClaudeAgent:
         cmd = [
             self._binary,
             "--print",
-            "--output-format", "json",
+            "--output-format", "stream-json",
+            "--verbose",
             "--model", self.model,
-            "--allowedTools", "Read,Glob",
+            "--allowedTools", "Read,Glob,Bash",
             "--no-session-persistence",
             prompt,
         ]
@@ -108,49 +109,55 @@ class ClaudeAgent:
 
 def _parse_output(raw: str) -> tuple[str, dict]:
     """
-    Парсит JSON-вывод Claude CLI.
+    Парсит NDJSON stream-json вывод Claude CLI (--output-format stream-json --verbose).
 
-    Формат: {"type":"result","result":"...","cost_usd":...,"messages":[...]}
+    Каждая строка — отдельный JSON event:
+      {"type":"assistant","message":{"content":[{"type":"tool_use","name":"Read",...}]}}
+      {"type":"result","result":"...","num_turns":N,...}
 
-    Из messages извлекаем:
-      - финальный текст (ответ агента)
-      - все tool_use блоки типа Read/Glob → список прочитанных файлов
+    Извлекаем:
+      - финальный текст из event type=result
+      - все tool_use блоки type=Read → список прочитанных файлов
     """
     trace = _empty_trace()
     hypothesis = "I don't know"
-
-    try:
-        data = json.loads(raw.strip())
-    except (json.JSONDecodeError, ValueError):
-        # Fallback: старый text-формат (если json не распарсился)
-        hypothesis = _extract_answer_text(raw)
-        return hypothesis, trace
-
-    # Финальный ответ
-    result_text = data.get("result", "")
-    hypothesis = _extract_answer_text(result_text) if result_text else "I don't know"
-
-    # Анализируем tool calls из messages
     files_read: list[str] = []
-    for msg in data.get("messages", []):
-        content = msg.get("content", [])
-        if not isinstance(content, list):
+
+    result_text = ""
+    for line in raw.splitlines():
+        line = line.strip()
+        if not line:
             continue
-        for block in content:
-            if not isinstance(block, dict):
+        try:
+            event = json.loads(line)
+        except (json.JSONDecodeError, ValueError):
+            continue
+
+        etype = event.get("type", "")
+
+        if etype == "result":
+            result_text = event.get("result", "")
+
+        elif etype == "assistant":
+            # Извлекаем tool_use блоки из assistant message
+            content = event.get("message", {}).get("content", [])
+            if not isinstance(content, list):
                 continue
-            if block.get("type") == "tool_use":
-                tool_name = block.get("name", "")
-                tool_input = block.get("input", {})
-                if tool_name == "Read":
-                    path = tool_input.get("file_path", "")
-                    # Нормализуем до относительного пути
+            for block in content:
+                if not isinstance(block, dict):
+                    continue
+                if block.get("type") == "tool_use" and block.get("name") == "Read":
+                    path = block.get("input", {}).get("file_path", "")
                     rel = _to_relative(path)
                     if rel:
                         files_read.append(rel)
-                elif tool_name == "Glob":
-                    # Glob сам по себе не читает, но показывает намерение
-                    pass
+
+    # Если stream-json не вернул ничего — fallback на plain text
+    if not result_text and not files_read:
+        hypothesis = _extract_answer_text(raw)
+        return hypothesis, trace
+
+    hypothesis = _extract_answer_text(result_text) if result_text else "I don't know"
 
     # Строим trace
     trace["files_read"] = files_read
