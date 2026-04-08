@@ -91,7 +91,7 @@ def _judge_with_codex(prompt: str, model: str, timeout: int) -> int:
 
 def _judge_with_claude(prompt: str, model: str, timeout: int, binary: str) -> int:
     cmd = [binary, "--print", "--model", model,
-           "--no-session-persistence", "--allowedTools", "", prompt]
+           "--no-session-persistence", prompt]
     try:
         r = subprocess.run(cmd, capture_output=True, text=True, timeout=timeout)
         return _parse_verdict(r.stdout)
