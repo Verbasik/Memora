@@ -28,11 +28,11 @@ class CodexAgent:
         self.model = model
         self.timeout = timeout
 
-    def answer(self, question: str, question_date: str, workspace: Path) -> str:
+    def answer(self, question: str, question_date: str, workspace: Path, mode: str = "direct") -> str:
         """
         Запускает агента в workspace и возвращает извлечённый ответ.
         """
-        prompt = _build_prompt(question, question_date)
+        prompt = _build_prompt(question, question_date, mode=mode)
 
         cmd = [
             "codex",
@@ -68,15 +68,26 @@ class CodexAgent:
 # Helpers
 # ─────────────────────────────────────────────────────────────────────────────
 
-def _build_prompt(question: str, question_date: str) -> str:
-    return f"""\
+def _build_prompt(question: str, question_date: str, mode: str = "direct") -> str:
+    if mode == "memora":
+        return f"""\
+The question was asked on {question_date}.
+
+Use memory-restore to load context from the memory bank (SESSIONS/ files contain the relevant chat history).
+After restoring context, answer the question below.
+
+Output ONLY: ANSWER: <your answer>
+
+Question: {question}"""
+    else:
+        return f"""\
 The question was asked on {question_date}.
 
 Instructions:
 1. List all files in memory-bank/.local/SESSIONS/
 2. Read each session file
 3. Based on the sessions, answer the question below
-4. Output ONLY your final answer in this exact format: ANSWER: <your answer>
+4. Output ONLY: ANSWER: <your answer>
 
 Question: {question}"""
 

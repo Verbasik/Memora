@@ -61,13 +61,21 @@ class ClaudeAgent:
         self.allowed_tools = allowed_tools
         self._binary = binary or _find_claude()
 
-    def answer(self, question: str, question_date: str, workspace: Path) -> str:
+    def answer(
+        self,
+        question: str,
+        question_date: str,
+        workspace: Path,
+        mode: str = "direct",
+    ) -> str:
         """
         Запускает агента в workspace и возвращает извлечённый ответ.
 
-        Возвращает строку ответа или "I don't know" при ошибке.
+        Args:
+            mode: "direct" (читать SESSIONS/ напрямую) или
+                  "memora" (использовать memory-restore skill)
         """
-        prompt = _build_prompt(question, question_date)
+        prompt = _build_prompt(question, question_date, mode=mode)
 
         cmd = [
             self._binary,
@@ -102,8 +110,19 @@ class ClaudeAgent:
 # Helpers
 # ─────────────────────────────────────────────────────────────────────────────
 
-def _build_prompt(question: str, question_date: str) -> str:
-    return f"""\
+def _build_prompt(question: str, question_date: str, mode: str = "direct") -> str:
+    if mode == "memora":
+        return f"""\
+The question was asked on {question_date}.
+
+Use memory-restore to load context from the memory bank (SESSIONS/ files contain the relevant chat history).
+After restoring context, answer the question below.
+
+Output ONLY your final answer in this exact format: ANSWER: <your answer>
+
+Question: {question}"""
+    else:
+        return f"""\
 The question was asked on {question_date}.
 
 Instructions:

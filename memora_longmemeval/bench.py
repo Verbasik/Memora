@@ -105,6 +105,16 @@ def parse_args() -> argparse.Namespace:
         help="Не удалять workspace после завершения (для отладки)",
     )
     p.add_argument(
+        "--mode",
+        choices=["direct", "memora"],
+        default="direct",
+        help=(
+            "Режим работы агента:\n"
+            "  direct — читает SESSIONS/*.md напрямую (baseline без Memora)\n"
+            "  memora — использует memory-restore skill (настоящий Memora)"
+        ),
+    )
+    p.add_argument(
         "--concurrency",
         type=int,
         default=1,
@@ -150,13 +160,16 @@ def main():
 
     # ── Выходной файл ─────────────────────────────────────────────────────────
     ts = datetime.now().strftime("%Y%m%d_%H%M%S")
-    agent_tag = f"{args.agent}_{(args.model or 'default').replace('/', '-')}"
+    agent_tag = f"{args.agent}_{(args.model or 'default').replace('/', '-')}_{args.mode}"
     output_path = Path(args.output) if args.output else Path(
         f"{data_path.stem}_{agent_tag}_{ts}.jsonl"
     )
     print(f"[INFO] Вывод → {output_path}")
 
     # ── Запуск ────────────────────────────────────────────────────────────────
+    mode = args.mode
+    print(f"[INFO] Режим: {mode.upper()} ({'Memora memory-restore' if mode == 'memora' else 'прямое чтение SESSIONS/'})")
+
     if args.concurrency > 1:
         results = _run_concurrent(dataset, agent, args)
     else:
@@ -199,7 +212,7 @@ def _run_sequential(
         t0 = time.time()
 
         keep = args.keep_workspace and i == 0  # только первый сохраняем при --keep
-        with MemoraWorkspace(keep=keep) as ws:
+        with MemoraWorkspace(mode=args.mode, keep=keep) as ws:
             if keep:
                 print(f"  workspace: {ws.path}")
 
@@ -219,6 +232,7 @@ def _run_sequential(
                 question=question,
                 question_date=question_date,
                 workspace=ws.path,
+                mode=args.mode,
             )
 
         elapsed = time.time() - t0
@@ -258,7 +272,7 @@ def _run_concurrent(
         qtype = item.get("question_type", "unknown")
 
         t0 = time.time()
-        with MemoraWorkspace() as ws:
+        with MemoraWorkspace(mode=args.mode) as ws:
             write_sessions(
                 haystack_sessions=item["haystack_sessions"],
                 haystack_dates=item["haystack_dates"],
@@ -270,6 +284,7 @@ def _run_concurrent(
                 question=question,
                 question_date=question_date,
                 workspace=ws.path,
+                mode=args.mode,
             )
 
         return {
