@@ -60,7 +60,8 @@ def _write_single(
     is_evidence: bool,
 ) -> Path:
     slug = _slugify(session_id)
-    filename = f"{date_str}-{idx:04d}-{slug}.md"
+    safe_date = _slugify(date_str)[:16]   # "2023/04/10 (Mon) 17:50" → "2023-04-10-mon-1"
+    filename = f"{safe_date}-{idx:04d}-{slug}.md"
     path = sessions_dir / filename
 
     summary = _extract_summary(session_turns)

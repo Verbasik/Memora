@@ -208,24 +208,27 @@ def _populate_kg(
 
     for date_str, session_id, turns in zip(haystack_dates, haystack_ids, haystack_sessions):
         try:
+            # Нормализуем дату: "2023/04/10 (Mon) 17:50" → "2023-04-10"
+            iso_date = _normalize_date(date_str)
+
             # Сессия произошла в эту дату
             kg.add_triple(
                 subject=session_id,
                 predicate="occurred_on",
-                obj=date_str,
-                valid_from=date_str,
+                obj=iso_date,
+                valid_from=iso_date,
             )
             n += 1
 
             # Пользователь был активен в эту дату
-            if date_str not in seen_dates:
+            if iso_date not in seen_dates:
                 kg.add_triple(
                     subject="user",
                     predicate="active_on",
-                    obj=date_str,
-                    valid_from=date_str,
+                    obj=iso_date,
+                    valid_from=iso_date,
                 )
-                seen_dates.add(date_str)
+                seen_dates.add(iso_date)
                 n += 1
 
             # Если в сессии есть evidence turns — помечаем
@@ -255,6 +258,20 @@ def _populate_kg(
             continue  # не даём ошибкам KG блокировать бенчмарк
 
     return n
+
+
+def _normalize_date(date_str: str) -> str:
+    """
+    Нормализует дату из формата LongMemEval в ISO 8601.
+
+    "2023/04/10 (Mon) 17:50"  → "2023-04-10"
+    "2023-04-10"               → "2023-04-10"  (уже нормально)
+    """
+    import re
+    m = re.match(r"(\d{4})[/-](\d{2})[/-](\d{2})", date_str)
+    if m:
+        return f"{m.group(1)}-{m.group(2)}-{m.group(3)}"
+    return date_str[:10]  # fallback: берём первые 10 символов
 
 
 def _extract_names(text: str) -> list[str]:

@@ -180,10 +180,12 @@ def main():
     else:
         results = _run_sequential(dataset, agent, args)
 
-    # ── Сохранение ────────────────────────────────────────────────────────────
-    with open(output_path, "w", encoding="utf-8") as f:
-        for r in results:
-            f.write(json.dumps(r, ensure_ascii=False) + "\n")
+    # ── Сохранение (финальная запись — для sequential режима) ─────────────────
+    # Concurrent режим пишет построчно в процессе работы (см. _run_concurrent)
+    if args.concurrency == 1:
+        with open(output_path, "w", encoding="utf-8") as f:
+            for r in results:
+                f.write(json.dumps(r, ensure_ascii=False) + "\n")
 
     _print_done(results, output_path, data_path)
 
@@ -273,14 +275,22 @@ def _run_concurrent(
             "n_kg_triples": meta["n_kg_triples"],
         }
 
-    with ThreadPoolExecutor(max_workers=concurrency) as pool:
-        futures = {pool.submit(process, (i, item)): i for i, item in enumerate(dataset)}
-        done = 0
-        for fut in as_completed(futures):
-            done += 1
-            r = fut.result()
-            print(f"  [{done}/{total}] {r['question_id']} → {r['hypothesis'][:60]}… ({r['elapsed_s']}s)")
-            results.append(r)
+    output_path = Path(args.output) if args.output else Path(
+        f"{Path(args.data_file).stem}_memora_{args.agent}_{(args.model or 'default')}_{__import__('datetime').datetime.now().strftime('%Y%m%d_%H%M%S')}.jsonl"
+    )
+
+    with open(output_path, "w", encoding="utf-8") as out_f:
+        with ThreadPoolExecutor(max_workers=concurrency) as pool:
+            futures = {pool.submit(process, (i, item)): i for i, item in enumerate(dataset)}
+            done = 0
+            for fut in as_completed(futures):
+                done += 1
+                r = fut.result()
+                # Инкрементальная запись — результат не теряется при остановке
+                out_f.write(json.dumps(r, ensure_ascii=False) + "\n")
+                out_f.flush()
+                print(f"  [{done}/{total}] {r['question_id']} → {r['hypothesis'][:60]}… ({r['elapsed_s']}s)")
+                results.append(r)
 
     id_order = {item["question_id"]: idx for idx, item in enumerate(dataset)}
     results.sort(key=lambda r: id_order.get(r["question_id"], 0))
