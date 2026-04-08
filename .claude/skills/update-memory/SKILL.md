@@ -86,6 +86,14 @@ description: Обновление memory bank после завершения з
 
 Создай `memory-bank/.local/SESSIONS/ГГГГ-ММ-ДД-<агент>-<slug>.md` по шаблону.
 
+При создании заполни поля Wing/Hall/Room в front matter (см. `PATTERNS/wing-hall-room.md`):
+
+- **wing**: имя агента (`claude`, `codex`) или домена (`feature-<slug>`, `infra`, `docs`, `research`)
+- **hall**: тип знания сессии — `hall_facts` (решения), `hall_events` (события/milestone), `hall_discoveries` (инсайты), `hall_advice` (рекомендации)
+- **room**: kebab-case slug темы (например: `stop-hooks`, `auth-migration`, `memory-bank-setup`)
+
+Если wing/room неизвестны — оставь пустыми. Не угадывай.
+
 ## 6. Отчёт
 
 Перечисли что обновлено. Отметь отложенные промоции.

@@ -15,6 +15,7 @@ memory-bank/.local/*
 !memory-bank/.local/SESSIONS/
 memory-bank/.local/SESSIONS/*
 !memory-bank/.local/SESSIONS/_template.md
+!memory-bank/.local/entities.json
 memory-bank/.sessions/
 memory-bank/ARCHIVE/
 

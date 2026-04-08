@@ -1,0 +1,10 @@
+{
+  "_meta": {
+    "generated_by": "entity-detect.py",
+    "files_scanned": 0,
+    "status": "empty",
+    "note": "Запусти: python3 memory-bank/scripts/entity-detect.py --dir . для заполнения кандидатами. Затем установи confirmed: true для подтверждённых сущностей."
+  },
+  "persons": [],
+  "projects": []
+}

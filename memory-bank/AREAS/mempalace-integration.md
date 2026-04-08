@@ -146,13 +146,13 @@ memora init ~/projects/
 
 ## План внедрения
 
-### Фаза 1 — Быстро (1-2 дня)
-- [ ] `memory-restore`: auto-summary из SESSIONS/ как L1 layer
-- [ ] Stop hook: счётчик exchanges + блокирование при N несохранённых
+### Фаза 1 — Быстро ✅ (выполнено 2026-04-08)
+- [x] `memory-restore`: auto-summary из SESSIONS/ как L1 layer (шаг 2.5 Essential Story)
+- [x] Stop hook: счётчик exchanges + блокирование при N несохранённых (`check-save-trigger.sh`)
 
-### Фаза 2 — Средне (1 неделя)
-- [ ] Front matter `wing/hall/room` для новых SESSIONS/ и EPISODES/
-- [ ] Entity detection при `memora init`
+### Фаза 2 — Средне ✅ (выполнено 2026-04-08)
+- [x] Front matter `wing/hall/room` для SESSIONS/ и EPISODES/ (`PATTERNS/wing-hall-room.md`)
+- [x] Entity detection при `memora init` (`scripts/entity-detect.py`)
 
 ### Фаза 3 — Долго (2-3 недели)
 - [ ] Temporal KG (SQLite) для multi-agent state tracking
