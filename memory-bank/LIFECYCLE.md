@@ -33,6 +33,19 @@ failure_routes:
   drift_detected: "/mb.audit -> /mb.update"
   double_reflect: "idempotent — reflect SKILL фильтрует уже помеченные сессии"
 hooks:
+  save_trigger:
+    event: "Stop"
+    script: "$(git rev-parse --show-toplevel)/memory-bank/scripts/check-save-trigger.sh"
+    type: "blocking"
+    blocking: true
+    threshold_env: "SAVE_INTERVAL"
+    threshold_default: 20
+    state_dir: "~/.memora/hook_state/"
+    infinite_loop_guard: "stop_hook_active"
+    adapters:
+      claude: ".claude/settings.json → hooks.Stop[0] (первым, timeout=30)"
+      codex: ".codex/config.toml → run-stop-hooks.sh (advisory mode)"
+      qwen: ".qwen/settings.json → hooks.Stop[0]"
   reflect_trigger:
     event: "Stop"
     script: "$(git rev-parse --show-toplevel)/memory-bank/scripts/check-reflect-trigger.sh"
@@ -80,17 +93,20 @@ hooks:
 
 Hooks — event-driven middleware для lifecycle pipeline. Они **детерминированны** (не зависят от LLM reasoning) и **advisory** (уведомляют, не блокируют).
 
-### Три хука на Stop-событие
+### Четыре хука на Stop-событие
 
-| Хук | Скрипт | Условие | Env-порог | Default |
-|-----|--------|---------|-----------|---------|
-| reflect | `check-reflect-trigger.sh` | Сессии без `<!-- reflected:` | `REFLECT_THRESHOLD` | 3 |
-| consolidate | `check-consolidate-trigger.sh` | Сессии без `<!-- consolidated:` | `CONSOLIDATE_THRESHOLD` | 5 |
-| gc | `check-gc-trigger.sh` | Всего файлов в SESSIONS/ | `GC_THRESHOLD` | 20 |
+| # | Хук | Скрипт | Тип | Условие | Env-порог | Default |
+|---|-----|--------|-----|---------|-----------|---------|
+| 1 | **save** | `check-save-trigger.sh` | **blocking** | Human-exchanges с последнего сохранения | `SAVE_INTERVAL` | 20 |
+| 2 | reflect | `check-reflect-trigger.sh` | advisory | Сессии без `<!-- reflected:` | `REFLECT_THRESHOLD` | 3 |
+| 3 | consolidate | `check-consolidate-trigger.sh` | advisory | Сессии без `<!-- consolidated:` | `CONSOLIDATE_THRESHOLD` | 5 |
+| 4 | gc | `check-gc-trigger.sh` | advisory | Всего файлов в SESSIONS/ | `GC_THRESHOLD` | 20 |
 
 ### Архитектура
 
-`Stop → все три скрипта → каждый считает метрику → если ≥ порог → advisory → агент решает`
+`Stop → save (blocking, если ≥ порог → /update-memory) → reflect → consolidate → gc (advisory)`
+
+**Infinite loop guard:** если `stop_hook_active=true` → save hook пропускается (агент уже сохранил).
 
 ### Идемпотентность
 

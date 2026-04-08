@@ -21,15 +21,20 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash \"$(git rev-parse --show-toplevel)/memory-bank/scripts/check-reflect-trigger.sh\""
+            "command": "bash -c 'ROOT=\"${CLAUDE_PROJECT_DIR:-$(git rev-parse --show-toplevel 2>/dev/null)}\"; [ -n \"$ROOT\" ] && bash \"$ROOT/memory-bank/scripts/check-save-trigger.sh\" || true'",
+            "timeout": 30
           },
           {
             "type": "command",
-            "command": "bash \"$(git rev-parse --show-toplevel)/memory-bank/scripts/check-consolidate-trigger.sh\""
+            "command": "bash -c 'ROOT=\"${CLAUDE_PROJECT_DIR:-$(git rev-parse --show-toplevel 2>/dev/null)}\"; [ -n \"$ROOT\" ] && bash \"$ROOT/memory-bank/scripts/check-reflect-trigger.sh\" || true'"
           },
           {
             "type": "command",
-            "command": "bash \"$(git rev-parse --show-toplevel)/memory-bank/scripts/check-gc-trigger.sh\""
+            "command": "bash -c 'ROOT=\"${CLAUDE_PROJECT_DIR:-$(git rev-parse --show-toplevel 2>/dev/null)}\"; [ -n \"$ROOT\" ] && bash \"$ROOT/memory-bank/scripts/check-consolidate-trigger.sh\" || true'"
+          },
+          {
+            "type": "command",
+            "command": "bash -c 'ROOT=\"${CLAUDE_PROJECT_DIR:-$(git rev-parse --show-toplevel 2>/dev/null)}\"; [ -n \"$ROOT\" ] && bash \"$ROOT/memory-bank/scripts/check-gc-trigger.sh\" || true'"
           }
         ]
       }

@@ -9,7 +9,12 @@ package-lock.json
 yarn.lock
 
 # Memory bank — локальные сессионные файлы (не коммитятся)
-memory-bank/.local/
+memory-bank/.local/*
+!memory-bank/.local/CURRENT.md
+!memory-bank/.local/HANDOFF.md
+!memory-bank/.local/SESSIONS/
+memory-bank/.local/SESSIONS/*
+!memory-bank/.local/SESSIONS/_template.md
 memory-bank/.sessions/
 memory-bank/ARCHIVE/
 
