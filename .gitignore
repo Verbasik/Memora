@@ -16,6 +16,10 @@ memory-bank/.local/*
 memory-bank/.local/SESSIONS/*
 !memory-bank/.local/SESSIONS/_template.md
 !memory-bank/.local/entities.json
+# SQLite KG database — локальная БД, не коммитится
+memory-bank/.local/*.db
+memory-bank/.local/*.db-wal
+memory-bank/.local/*.db-shm
 memory-bank/.sessions/
 memory-bank/ARCHIVE/
 

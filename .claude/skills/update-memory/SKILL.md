@@ -94,6 +94,26 @@ description: Обновление memory bank после завершения з
 
 Если wing/room неизвестны — оставь пустыми. Не угадывай.
 
+## 5.5 Knowledge Graph (если scripts/knowledge_graph.py доступен)
+
+Запиши temporal triples для ключевых фактов сессии (см. `PATTERNS/temporal-kg.md`):
+
+```bash
+# Агент начал работу над задачей
+python3 memory-bank/scripts/knowledge_graph.py add <agent> works_on <room> --from ГГГГ-ММ-ДД --src SESSIONS/<файл>.md
+
+# Агент завершил задачу
+python3 memory-bank/scripts/knowledge_graph.py add <agent> completed <task-slug> --from ГГГГ-ММ-ДД
+
+# Принято архитектурное решение
+python3 memory-bank/scripts/knowledge_graph.py add <agent> decided <decision-slug> --from ГГГГ-ММ-ДД
+
+# Предыдущая задача закрыта
+python3 memory-bank/scripts/knowledge_graph.py invalidate <agent> works_on <old-task>
+```
+
+Если `knowledge_graph.py` недоступен или команда падает — пропустить без ошибки. KG опционален.
+
 ## 6. Отчёт
 
 Перечисли что обновлено. Отметь отложенные промоции.
