@@ -37,6 +37,7 @@ import re
 import shutil
 import subprocess
 import sys
+import tempfile
 import time
 from collections import defaultdict
 from concurrent.futures import ThreadPoolExecutor, as_completed
@@ -80,23 +81,61 @@ def _find_claude() -> str:
     raise RuntimeError("Claude CLI не найден")
 
 
-def _judge_with_codex(prompt: str, model: str, timeout: int) -> int:
-    cmd = ["codex", "--full-auto", "--quiet", "--model", model, prompt]
+def _judge_with_codex(prompt: str, model: str, timeout: int) -> dict:
+    with tempfile.NamedTemporaryFile(prefix="codex-judge-", suffix=".txt", delete=False) as tmp:
+        output_path = tmp.name
+    cmd = [
+        "codex",
+        "exec",
+        "--full-auto",
+        "--skip-git-repo-check",
+        "--color",
+        "never",
+        "--model",
+        model,
+        "-o",
+        output_path,
+        prompt,
+    ]
     try:
         r = subprocess.run(cmd, capture_output=True, text=True, timeout=timeout)
-        return _parse_verdict(r.stdout)
-    except (subprocess.TimeoutExpired, FileNotFoundError):
-        return -1  # ошибка
+        last_message = _read_codex_last_message(output_path)
+        text = last_message or r.stdout
+        if not text.strip():
+            return {
+                "label": -1,
+                "judge_error": "no_model_output" if r.returncode != 0 else "empty_output",
+                "judge_output_excerpt": _excerpt(r.stderr) if r.stderr else None,
+            }
+        label = _parse_verdict(text)
+        return {
+            "label": label,
+            "judge_error": None if label != -1 else "unparsed_verdict",
+            "judge_output_excerpt": _excerpt(text) if label == -1 else None,
+        }
+    except subprocess.TimeoutExpired:
+        return {"label": -1, "judge_error": "timeout", "judge_output_excerpt": None}
+    except FileNotFoundError:
+        return {"label": -1, "judge_error": "binary_not_found", "judge_output_excerpt": None}
+    finally:
+        Path(output_path).unlink(missing_ok=True)
 
 
-def _judge_with_claude(prompt: str, model: str, timeout: int, binary: str) -> int:
+def _judge_with_claude(prompt: str, model: str, timeout: int, binary: str) -> dict:
     cmd = [binary, "--print", "--model", model,
            "--no-session-persistence", prompt]
     try:
         r = subprocess.run(cmd, capture_output=True, text=True, timeout=timeout)
-        return _parse_verdict(r.stdout)
-    except (subprocess.TimeoutExpired, FileNotFoundError):
-        return -1
+        label = _parse_verdict(r.stdout)
+        return {
+            "label": label,
+            "judge_error": None if label != -1 else "unparsed_verdict",
+            "judge_output_excerpt": _excerpt(r.stdout) if label == -1 else None,
+        }
+    except subprocess.TimeoutExpired:
+        return {"label": -1, "judge_error": "timeout", "judge_output_excerpt": None}
+    except FileNotFoundError:
+        return {"label": -1, "judge_error": "binary_not_found", "judge_output_excerpt": None}
 
 
 def _parse_verdict(output: str) -> int:
@@ -112,6 +151,20 @@ def _parse_verdict(output: str) -> int:
     if "CORRECT" in text or "YES" == text:
         return 1
     return -1
+
+
+def _excerpt(text: str, limit: int = 300) -> str:
+    normalized = " ".join(text.split())
+    if len(normalized) <= limit:
+        return normalized
+    return normalized[: limit - 1] + "…"
+
+
+def _read_codex_last_message(path: str) -> str:
+    file_path = Path(path)
+    if not file_path.exists():
+        return ""
+    return file_path.read_text(encoding="utf-8").strip()
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -144,14 +197,16 @@ def evaluate_one(
 
     t0 = time.time()
     if judge == "codex":
-        label = _judge_with_codex(prompt, judge_model, timeout)
+        judge_result = _judge_with_codex(prompt, judge_model, timeout)
     else:
-        label = _judge_with_claude(prompt, judge_model, timeout, claude_binary or _find_claude())
+        judge_result = _judge_with_claude(prompt, judge_model, timeout, claude_binary or _find_claude())
     elapsed = round(time.time() - t0, 2)
 
     return {
         **result,
-        "autoeval_label": label,
+        "autoeval_label": judge_result["label"],
+        "judge_error": judge_result["judge_error"],
+        "judge_output_excerpt": judge_result["judge_output_excerpt"],
         "judge_elapsed_s": elapsed,
         "correct_answer": correct_answer,
     }
@@ -189,7 +244,7 @@ def run_evaluation(
 
     # ── Дефолтные модели ──────────────────────────────────────────────────────
     if judge_model is None:
-        judge_model = "o4-mini" if judge == "codex" else "haiku"
+        judge_model = "gpt-5.2" if judge == "codex" else "haiku"
 
     # ── Claude binary ─────────────────────────────────────────────────────────
     claude_binary = None
@@ -254,9 +309,9 @@ def _print_report(evaluated: list[dict], errors: int, output_file: str):
         by_type[qtype].append(r["autoeval_label"])
 
     print(f"\n{'═' * 55}")
-    print(f"  Overall Accuracy: {acc:.1%}  ({correct}/{scored})")
+    print(f"  Overall Accuracy: {acc:.1%}  ({correct}/{scored} scored)")
     if errors:
-        print(f"  Ошибок оценки:   {errors} (judge не ответил)")
+        print(f"  Ошибок оценки:   {errors}/{total} ({errors / total:.1%})")
     print(f"{'─' * 55}")
     print(f"  {'Тип вопроса':<35} {'N':>4}  {'Acc':>6}")
     print(f"{'─' * 55}")
@@ -290,7 +345,7 @@ def main():
     p.add_argument(
         "--judge-model",
         default=None,
-        help="Модель судьи (default: o4-mini для codex, haiku для claude)",
+        help="Модель судьи (default: gpt-5.2 для codex, haiku для claude)",
     )
     p.add_argument("--output", default=None, help="Путь к выходному .log файлу")
     p.add_argument("--concurrency", type=int, default=4,

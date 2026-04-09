@@ -4,10 +4,21 @@ session_adapter.py — конвертирует LongMemEval сессии в фо
 
 from __future__ import annotations
 
+from dataclasses import dataclass
 import re
-from datetime import datetime
 from pathlib import Path
 
+from memora_longmemeval.modes import is_memora_mode
+
+
+@dataclass(frozen=True)
+class SessionArtifact:
+    """One materialized benchmark session file plus its non-public source mapping."""
+
+    path: Path
+    public_id: str
+    source_id: str
+    created_at: str
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Public API
@@ -18,33 +29,39 @@ def write_sessions(
     haystack_dates: list[str],
     haystack_session_ids: list[str],
     sessions_dir: Path,
-    answer_session_ids: list[str] | None = None,
-) -> list[Path]:
+    mode: str = "memora-min",
+) -> list[SessionArtifact]:
     """
     Конвертирует haystack_sessions из LongMemEval в набор SESSIONS/*.md файлов.
 
     Возвращает список созданных путей.
     """
     sessions_dir.mkdir(parents=True, exist_ok=True)
-    paths: list[Path] = []
-
-    evidence_ids = set(answer_session_ids or [])
+    artifacts: list[SessionArtifact] = []
+    memora_format = is_memora_mode(mode)
 
     for idx, (session_turns, date_str, session_id) in enumerate(
         zip(haystack_sessions, haystack_dates, haystack_session_ids)
     ):
-        is_evidence = session_id in evidence_ids
+        public_id = f"session_{idx + 1:04d}"
         path = _write_single(
             session_turns=session_turns,
             date_str=date_str,
-            session_id=session_id,
+            public_id=public_id,
             idx=idx,
             sessions_dir=sessions_dir,
-            is_evidence=is_evidence,
+            memora_format=memora_format,
         )
-        paths.append(path)
+        artifacts.append(
+            SessionArtifact(
+                path=path,
+                public_id=public_id,
+                source_id=session_id,
+                created_at=date_str,
+            )
+        )
 
-    return paths
+    return artifacts
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -54,41 +71,53 @@ def write_sessions(
 def _write_single(
     session_turns: list[dict],
     date_str: str,
-    session_id: str,
+    public_id: str,
     idx: int,
     sessions_dir: Path,
-    is_evidence: bool,
+    memora_format: bool,
 ) -> Path:
-    slug = _slugify(session_id)
-    safe_date = _slugify(date_str)[:16]   # "2023/04/10 (Mon) 17:50" → "2023-04-10-mon-1"
-    filename = f"{safe_date}-{idx:04d}-{slug}.md"
+    safe_date = _date_prefix(date_str)
+    filename = f"{safe_date}-{idx:04d}-{public_id}.md"
     path = sessions_dir / filename
 
     summary = _extract_summary(session_turns)
     conversation = _format_turns(session_turns)
 
-    evidence_tag = "  # evidence session" if is_evidence else ""
-
-    content = f"""\
+    if memora_format:
+        content = f"""\
 ---
-title: "SESSION/{date_str}-{slug}"
-id: "session-{date_str}-{slug}"
+title: "SESSION/{date_str}-{public_id}"
+id: "{public_id}"
 type: "SESSION"
 version: "1.0.0"
 authority: "free"
 status: "active"
 owner: "longmemeval"
 created_at: "{date_str}"
-session_id: "{session_id}"{evidence_tag}
+session_id: "{public_id}"
 wing: "longmemeval"
 hall: "hall_facts"
-room: "{slug}"
+room: "{public_id}"
 pii_risk: "none"
 ttl: null
 tags: []
 ---
 
-# Session: {session_id} ({date_str})
+# Session: {public_id} ({date_str})
+
+## Summary
+
+{summary}
+
+## Conversation
+
+{conversation}
+"""
+    else:
+        content = f"""\
+# Session: {public_id}
+
+Date: {date_str}
 
 ## Summary
 
@@ -120,9 +149,7 @@ def _format_turns(turns: list[dict]) -> str:
     for turn in turns:
         role = turn.get("role", "unknown").capitalize()
         content = turn.get("content", "").strip()
-        has_answer = turn.get("has_answer", False)
-        marker = " ⭐" if has_answer else ""
-        lines.append(f"**{role}**{marker}: {content}\n")
+        lines.append(f"**{role}**: {content}\n")
     return "\n".join(lines)
 
 
@@ -130,3 +157,18 @@ def _slugify(text: str) -> str:
     text = text.lower()
     text = re.sub(r"[^a-z0-9]+", "-", text)
     return text.strip("-")[:40]
+
+
+def _date_prefix(date_str: str) -> str:
+    """
+    Build a stable chronological filename prefix.
+
+    "2023/04/10 (Mon) 17:50" -> "2023-04-10-1750"
+    """
+    match = re.match(r"(\d{4})[/-](\d{2})[/-](\d{2}).*?(\d{2}):(\d{2})", date_str)
+    if match:
+        return f"{match.group(1)}-{match.group(2)}-{match.group(3)}-{match.group(4)}{match.group(5)}"
+    date_only = re.match(r"(\d{4})[/-](\d{2})[/-](\d{2})", date_str)
+    if date_only:
+        return f"{date_only.group(1)}-{date_only.group(2)}-{date_only.group(3)}-0000"
+    return _slugify(date_str)[:16]

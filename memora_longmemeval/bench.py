@@ -34,7 +34,7 @@ Usage:
         --agent claude --model opus
 
     python memora_longmemeval/bench.py data/longmemeval_oracle.json \\
-        --agent codex --model o4-mini
+        --agent codex --model gpt-5.2
 
     # Фильтр по типу вопроса
     python memora_longmemeval/bench.py data/longmemeval_oracle.json \\
@@ -73,6 +73,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from memora_longmemeval.ingestor import ingest
+from memora_longmemeval.modes import ALL_MODES, MODE_MEMORA_MIN, is_memora_mode
 from memora_longmemeval.workspace import MemoraWorkspace
 from memora_longmemeval.agents import ClaudeAgent, CodexAgent
 
@@ -95,9 +96,15 @@ def parse_args() -> argparse.Namespace:
         help="CLI-агент (default: claude)",
     )
     p.add_argument(
+        "--mode",
+        choices=ALL_MODES,
+        default=MODE_MEMORA_MIN,
+        help="Benchmark-режим: fair baseline vs Memora modes",
+    )
+    p.add_argument(
         "--model",
         default=None,
-        help="Модель: claude→sonnet/opus/haiku, codex→o4-mini/o3/gpt-4o",
+        help="Модель: claude→sonnet/opus/haiku, codex→gpt-5.2/gpt-5.4/gpt-5.4-mini/gpt-5.3-codex",
     )
     p.add_argument(
         "--limit",
@@ -164,21 +171,23 @@ def main():
     # ── Агент ─────────────────────────────────────────────────────────────────
     agent = _make_agent(args)
     print(f"[INFO] Агент: {agent}")
-    print(f"[INFO] Pipeline: двухфазный (ingestion → memory-restore → answer)")
+    print(f"[INFO] Режим: {args.mode}")
+    print(f"[INFO] Pipeline: ingestion → answer")
 
     # ── Вывод ─────────────────────────────────────────────────────────────────
     ts = datetime.now().strftime("%Y%m%d_%H%M%S")
+    run_id = f"{ts}_{args.mode}_{args.agent}_{(args.model or 'default').replace('/', '-')}"
     agent_tag = f"{args.agent}_{(args.model or 'default').replace('/', '-')}"
     output_path = Path(args.output) if args.output else Path(
-        f"{data_path.stem}_memora_{agent_tag}_{ts}.jsonl"
+        f"{data_path.stem}_{args.mode}_{agent_tag}_{ts}.jsonl"
     )
     print(f"[INFO] Вывод → {output_path}\n")
 
     # ── Запуск ────────────────────────────────────────────────────────────────
     if args.concurrency > 1:
-        results = _run_concurrent(dataset, agent, args)
+        results = _run_concurrent(dataset, agent, args, output_path, run_id)
     else:
-        results = _run_sequential(dataset, agent, args)
+        results = _run_sequential(dataset, agent, args, run_id)
 
     # ── Сохранение (финальная запись — для sequential режима) ─────────────────
     # Concurrent режим пишет построчно в процессе работы (см. _run_concurrent)
@@ -198,6 +207,7 @@ def _run_sequential(
     dataset: list[dict],
     agent: ClaudeAgent | CodexAgent,
     args: argparse.Namespace,
+    run_id: str,
 ) -> list[dict]:
     results = []
     total = len(dataset)
@@ -214,22 +224,28 @@ def _run_sequential(
         t0 = time.time()
         keep = args.keep_workspace and i == 0
 
-        with MemoraWorkspace(keep=keep) as ws:
+        with MemoraWorkspace(keep=keep, mode=args.mode) as ws:
             if keep:
                 print(f"        workspace: {ws.path}")
 
             # ── Фаза 1: Ingestion ──────────────────────────────────────────
-            meta = ingest(item=item, workspace_path=ws.path, sessions_dir=ws.sessions_dir)
+            meta = ingest(
+                item=item,
+                workspace_path=ws.path,
+                sessions_dir=ws.sessions_dir,
+                mode=args.mode,
+            )
 
             # ── Фаза 2: Query ──────────────────────────────────────────────
             hypothesis, trace = agent.answer(
                 question=question,
                 question_date=question_date,
                 workspace=ws.path,
+                mode=args.mode,
             )
 
         elapsed = time.time() - t0
-        memora_tag = " ✓memora" if trace.get("memora_used") else " ✗memora"
+        memora_tag = _trace_tag(trace.get("memora_used"), args.mode)
         print(f"        A: {hypothesis[:90]}{'…' if len(hypothesis) > 90 else ''}{memora_tag}")
         print(f"        sessions={meta['n_sessions']} kg={meta['n_kg_triples']} "
               f"reads={trace.get('sessions_read', 0)} time={elapsed:.1f}s\n")
@@ -238,13 +254,23 @@ def _run_sequential(
             "question_id": qid,
             "hypothesis": hypothesis,
             "question_type": qtype,
+            "dataset": Path(args.data_file).name,
+            "mode": args.mode,
+            "agent": args.agent,
+            "model": args.model or ("sonnet" if args.agent == "claude" else "gpt-5.2"),
+            "run_id": run_id,
             "elapsed_s": round(elapsed, 2),
             "n_sessions": meta["n_sessions"],
             "n_kg_triples": meta["n_kg_triples"],
-            "memora_used": trace.get("memora_used", False),
+            "memora_used": trace.get("memora_used"),
             "sessions_read": trace.get("sessions_read", 0),
             "read_handoff": trace.get("read_handoff", False),
             "read_current": trace.get("read_current", False),
+            "retrieved_files": trace.get("retrieved_files", []),
+            "retrieved_session_ids": _resolve_retrieved_session_ids(
+                trace.get("retrieved_files", []),
+                meta["session_map"],
+            ),
         })
 
     return results
@@ -254,6 +280,8 @@ def _run_concurrent(
     dataset: list[dict],
     agent: ClaudeAgent | CodexAgent,
     args: argparse.Namespace,
+    output_path: Path,
+    run_id: str,
 ) -> list[dict]:
     from concurrent.futures import ThreadPoolExecutor, as_completed
 
@@ -265,29 +293,41 @@ def _run_concurrent(
     def process(idx_item):
         i, item = idx_item
         t0 = time.time()
-        with MemoraWorkspace() as ws:
-            meta = ingest(item=item, workspace_path=ws.path, sessions_dir=ws.sessions_dir)
+        with MemoraWorkspace(mode=args.mode) as ws:
+            meta = ingest(
+                item=item,
+                workspace_path=ws.path,
+                sessions_dir=ws.sessions_dir,
+                mode=args.mode,
+            )
             hypothesis, trace = agent.answer(
                 question=item["question"],
                 question_date=item.get("question_date", "unknown"),
                 workspace=ws.path,
+                mode=args.mode,
             )
         return {
             "question_id": item["question_id"],
             "hypothesis": hypothesis,
             "question_type": item.get("question_type", "unknown"),
+            "dataset": Path(args.data_file).name,
+            "mode": args.mode,
+            "agent": args.agent,
+            "model": args.model or ("sonnet" if args.agent == "claude" else "gpt-5.2"),
+            "run_id": run_id,
             "elapsed_s": round(time.time() - t0, 2),
             "n_sessions": meta["n_sessions"],
             "n_kg_triples": meta["n_kg_triples"],
-            "memora_used": trace.get("memora_used", False),
+            "memora_used": trace.get("memora_used"),
             "sessions_read": trace.get("sessions_read", 0),
             "read_handoff": trace.get("read_handoff", False),
             "read_current": trace.get("read_current", False),
+            "retrieved_files": trace.get("retrieved_files", []),
+            "retrieved_session_ids": _resolve_retrieved_session_ids(
+                trace.get("retrieved_files", []),
+                meta["session_map"],
+            ),
         }
-
-    output_path = Path(args.output) if args.output else Path(
-        f"{Path(args.data_file).stem}_memora_{args.agent}_{(args.model or 'default')}_{__import__('datetime').datetime.now().strftime('%Y%m%d_%H%M%S')}.jsonl"
-    )
 
     with open(output_path, "w", encoding="utf-8") as out_f:
         with ThreadPoolExecutor(max_workers=concurrency) as pool:
@@ -299,7 +339,11 @@ def _run_concurrent(
                 # Инкрементальная запись — результат не теряется при остановке
                 out_f.write(json.dumps(r, ensure_ascii=False) + "\n")
                 out_f.flush()
-                print(f"  [{done}/{total}] {r['question_id']} → {r['hypothesis'][:60]}… ({r['elapsed_s']}s)")
+                tag = _trace_tag(r.get("memora_used"), args.mode)
+                print(
+                    f"  [{done}/{total}] {r['question_id']} → "
+                    f"{r['hypothesis'][:60]}… ({r['elapsed_s']}s){tag}"
+                )
                 results.append(r)
 
     id_order = {item["question_id"]: idx for idx, item in enumerate(dataset)}
@@ -314,7 +358,7 @@ def _run_concurrent(
 def _make_agent(args):
     if args.agent == "claude":
         return ClaudeAgent(model=args.model or "sonnet", timeout=args.timeout)
-    return CodexAgent(model=args.model or "o4-mini", timeout=args.timeout)
+    return CodexAgent(model=args.model or "gpt-5.2", timeout=args.timeout)
 
 
 def _print_done(results: list[dict], output_path: Path, data_path: Path):
@@ -328,8 +372,9 @@ def _print_done(results: list[dict], output_path: Path, data_path: Path):
     for r in results:
         by_type[r["question_type"]] += 1
 
-    memora_used = sum(1 for r in results if r.get("memora_used"))
-    memora_pct = memora_used / total * 100 if total else 0
+    memora_supported = [r for r in results if r.get("memora_used") is not None]
+    memora_used = sum(1 for r in memora_supported if r.get("memora_used"))
+    memora_pct = memora_used / len(memora_supported) * 100 if memora_supported else 0
     avg_sessions_read = sum(r.get("sessions_read", 0) for r in results) / total if total else 0
 
     print(f"{'─'*60}")
@@ -337,7 +382,13 @@ def _print_done(results: list[dict], output_path: Path, data_path: Path):
     print(f"  Avg time/вопрос:     {avg_t:.1f}s")
     print(f"  Общее время:         {total_t/60:.1f} мин")
     print(f"  Avg KG triples:      {avg_kg:.1f}")
-    print(f"  Memora usage:        {memora_used}/{total} ({memora_pct:.1f}%)")
+    if memora_supported:
+        print(
+            f"  Memora usage:        {memora_used}/{len(memora_supported)} "
+            f"({memora_pct:.1f}%)"
+        )
+    else:
+        print("  Memora usage:        n/a (unsupported in this mode/toolchain)")
     print(f"  Avg sessions read:   {avg_sessions_read:.1f}")
     print(f"  По типам:            {dict(sorted(by_type.items()))}")
     print(f"{'─'*60}")
@@ -355,6 +406,17 @@ def _print_download_hint():
     print("    mkdir -p data/ && cd data/", file=sys.stderr)
     print("    wget https://huggingface.co/datasets/xiaowu0162/longmemeval-cleaned/resolve/main/longmemeval_oracle.json", file=sys.stderr)
     print("    wget https://huggingface.co/datasets/xiaowu0162/longmemeval-cleaned/resolve/main/longmemeval_s_cleaned.json", file=sys.stderr)
+
+
+def _trace_tag(memora_used: bool | None, mode: str) -> str:
+    if not is_memora_mode(mode) or memora_used is None:
+        return ""
+    return " ✓memora" if memora_used else " ✗memora"
+
+
+def _resolve_retrieved_session_ids(retrieved_files: list[str], session_map: list[dict]) -> list[str]:
+    by_rel_path = {row["relative_path"]: row["source_id"] for row in session_map}
+    return [by_rel_path[path] for path in retrieved_files if path in by_rel_path]
 
 
 if __name__ == "__main__":

@@ -40,6 +40,14 @@ Read:
 - [Validation](./VALIDATION.md)
 - [CLI Reference](./CLI.md)
 
+### I want to understand the LongMemEval evaluation protocol
+Read:
+
+- [LongMemEval Experiment Protocol](./LONGMEMEVAL_EXPERIMENT.md)
+- [Judge Calibration](./JUDGE_CALIBRATION.md)
+- [Validation](./VALIDATION.md)
+- [Toolchains](./TOOLCHAINS.md)
+
 ### I want to configure deterministic maintenance hooks
 Read:
 
@@ -115,6 +123,8 @@ Read:
 | [PATTERNS.md](./PATTERNS.md) | Which reusable knowledge and workflow patterns come with Memora? |
 | [SECURITY.md](./SECURITY.md) | How does Memora approach security and memory hygiene? |
 | [MANIFESTO.md](./MANIFESTO.md) | What design philosophy and protocol mindset shape Memora? |
+| [LONGMEMEVAL_EXPERIMENT.md](./LONGMEMEVAL_EXPERIMENT.md) | How should Memora be evaluated fairly and statistically on LongMemEval? |
+| [JUDGE_CALIBRATION.md](./JUDGE_CALIBRATION.md) | How should a practical LongMemEval judge be calibrated against a reference evaluator? |
 
 ---
 
@@ -145,4 +155,4 @@ That split is intentional: it keeps the main user path practical while preservin
 
 ---
 
-**Last updated:** 2026-04-08
+**Last updated:** 2026-04-09

@@ -16,31 +16,46 @@ import argparse
 import json
 import math
 import random
-import sys
 from collections import defaultdict
-from pathlib import Path
 
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Data loading
 # ─────────────────────────────────────────────────────────────────────────────
 
-def load_results(path: str) -> dict[str, str]:
-    """Загружает JSONL с полями question_id + autoeval_label (или hypothesis)."""
-    results = {}
+def load_results(path: str) -> dict[str, dict]:
+    """
+    Загружает JSONL и возвращает dict[question_id -> result metadata].
+
+    `autoeval_label`:
+      1 -> correct
+      0 -> incorrect
+     -1 -> judge error / missing verdict
+    """
+    results: dict[str, dict] = {}
     with open(path, encoding="utf-8") as f:
         for line in f:
             line = line.strip()
             if not line:
                 continue
-            d = json.loads(line)
-            qid = d["question_id"]
-            # Поддерживаем оба формата: evaluate_qa.py output и наш JSONL
-            label = d.get("autoeval_label")
+            data = json.loads(line)
+            qid = data["question_id"]
+            label = data.get("autoeval_label")
             if label is None:
-                # Fallback: нет оценки — считаем неверным
                 label = 0
-            results[qid] = int(label)
+            label = int(label)
+            judge_error = data.get("judge_error")
+            if label == -1 and not judge_error:
+                judge_error = "missing_verdict"
+            results[qid] = {
+                "label": label,
+                "judge_error": judge_error,
+                "question_type": data.get("question_type"),
+                "mode": data.get("mode"),
+                "agent": data.get("agent"),
+                "model": data.get("model"),
+                "retrieved_session_ids": data.get("retrieved_session_ids") or [],
+            }
     return results
 
 
@@ -83,46 +98,62 @@ def bootstrap_ci(
     return (lo, hi)
 
 
+def paired_bootstrap_delta_ci(
+    labels_a: list[int],
+    labels_b: list[int],
+    n_bootstrap: int = 10_000,
+    confidence: float = 0.95,
+    seed: int = 42,
+) -> tuple[float, float]:
+    """Paired bootstrap CI for accuracy delta (A - B)."""
+    assert len(labels_a) == len(labels_b), "Одинаковое количество вопросов"
+    rng = random.Random(seed)
+    n = len(labels_a)
+    if n == 0:
+        return (0.0, 0.0)
+
+    deltas = []
+    for _ in range(n_bootstrap):
+        sample_idx = [rng.randint(0, n - 1) for _ in range(n)]
+        sample_a = [labels_a[i] for i in sample_idx]
+        sample_b = [labels_b[i] for i in sample_idx]
+        deltas.append((sum(sample_a) - sum(sample_b)) / n)
+
+    deltas.sort()
+    alpha = (1 - confidence) / 2
+    lo = deltas[int(alpha * n_bootstrap)]
+    hi = deltas[int((1 - alpha) * n_bootstrap)]
+    return (lo, hi)
+
+
 def mcnemar_test(
     labels_a: list[int],
     labels_b: list[int],
-) -> tuple[float, float]:
+) -> tuple[float, float, int, int]:
     """
     McNemar's test для сравнения двух систем на одних вопросах.
-    Возвращает (chi2, p_value).
-
-    H0: обе системы одинаково хороши.
-    p < 0.05 → статистически значимая разница.
+    Возвращает (chi2, p_value, b, c).
     """
     assert len(labels_a) == len(labels_b), "Одинаковое количество вопросов"
 
-    # Таблица несогласий
-    b = sum(1 for a, b_ in zip(labels_a, labels_b) if a == 1 and b_ == 0)  # A верно, B неверно
-    c = sum(1 for a, b_ in zip(labels_a, labels_b) if a == 0 and b_ == 1)  # A неверно, B верно
+    b = sum(1 for a, b_ in zip(labels_a, labels_b) if a == 1 and b_ == 0)
+    c = sum(1 for a, b_ in zip(labels_a, labels_b) if a == 0 and b_ == 1)
 
     if b + c == 0:
-        return (0.0, 1.0)  # нет несогласий → нет разницы
+        return (0.0, 1.0, b, c)
 
-    # Chi-squared с поправкой Йейтса
     chi2 = (abs(b - c) - 1) ** 2 / (b + c)
-
-    # p-value (chi-squared df=1, аппроксимация)
     p = _chi2_sf(chi2, df=1)
-    return (chi2, p)
+    return (chi2, p, b, c)
 
 
 def _chi2_sf(x: float, df: int = 1) -> float:
-    """Survival function chi-squared (1 df), аппроксимация через регуляризованную гамму."""
-    # Для df=1: chi2_sf(x) = 1 - erf(sqrt(x/2))
-    # Аппроксимация Абрамовица и Стегуна
+    """Survival function chi-squared (1 df), аппроксимация через erfc."""
     t = math.sqrt(x / 2)
-    # erfc через стандартное приближение
-    erfc_val = _erfc(t)
-    return erfc_val
+    return _erfc(t)
 
 
 def _erfc(x: float) -> float:
-    """erfc(x) = 1 - erf(x), приближение Чебышёва."""
     if x < 0:
         return 2.0 - _erfc(-x)
     t = 1.0 / (1.0 + 0.3275911 * x)
@@ -136,36 +167,108 @@ def _erfc(x: float) -> float:
     return poly * math.exp(-x * x)
 
 
+def retrieval_report(
+    results: dict[str, dict],
+    dataset: dict[str, dict],
+) -> dict | None:
+    """
+    Session-level retrieval metrics against dataset `answer_session_ids`.
+
+    Returns None if the result file does not include retrieval IDs.
+    """
+    rows = []
+    for qid, record in results.items():
+        if qid not in dataset:
+            continue
+        retrieved = record.get("retrieved_session_ids")
+        if not retrieved:
+            continue
+        gold = dataset[qid].get("answer_session_ids") or []
+        if not gold:
+            continue
+        rows.append((retrieved, list(gold)))
+
+    if not rows:
+        return None
+
+    r1 = []
+    r3 = []
+    r5 = []
+    reciprocal_ranks = []
+    ndcg5 = []
+
+    for retrieved, gold in rows:
+        gold_set = set(gold)
+        r1.append(1 if any(session_id in gold_set for session_id in retrieved[:1]) else 0)
+        r3.append(1 if any(session_id in gold_set for session_id in retrieved[:3]) else 0)
+        r5.append(1 if any(session_id in gold_set for session_id in retrieved[:5]) else 0)
+
+        first_rank = 0.0
+        for idx, session_id in enumerate(retrieved, start=1):
+            if session_id in gold_set:
+                first_rank = 1.0 / idx
+                break
+        reciprocal_ranks.append(first_rank)
+
+        dcg = 0.0
+        for idx, session_id in enumerate(retrieved[:5], start=1):
+            if session_id in gold_set:
+                dcg += 1.0 / math.log2(idx + 1)
+        ideal_hits = min(len(gold_set), 5)
+        idcg = sum(1.0 / math.log2(idx + 1) for idx in range(1, ideal_hits + 1))
+        ndcg5.append(dcg / idcg if idcg else 0.0)
+
+    return {
+        "n": len(rows),
+        "recall@1": accuracy(r1),
+        "recall@3": accuracy(r3),
+        "recall@5": accuracy(r5),
+        "mrr": sum(reciprocal_ranks) / len(reciprocal_ranks),
+        "ndcg@5": sum(ndcg5) / len(ndcg5),
+    }
+
+
 # ─────────────────────────────────────────────────────────────────────────────
 # Report
 # ─────────────────────────────────────────────────────────────────────────────
 
 def report(
-    results: dict[str, int],
+    results: dict[str, dict],
     dataset: dict[str, dict],
     label: str = "System",
 ) -> dict:
     """Печатает полный отчёт и возвращает структуру данных для сравнения."""
-
-    # Группируем по типу вопроса
     by_type: dict[str, list[int]] = defaultdict(list)
-    for qid, correct in results.items():
+    scored_by_qid: dict[str, int] = {}
+    total = 0
+    errors = 0
+
+    for qid, record in results.items():
         if qid not in dataset:
             continue
+        total += 1
+        result_label = record["label"]
         qtype = dataset[qid].get("question_type", "unknown")
-        # Abstention вопросы имеют суффикс _abs
         if qid.endswith("_abs"):
             qtype = "abstention"
-        by_type[qtype].append(correct)
 
-    all_labels = [v for vs in by_type.values() for v in vs]
+        if result_label in (0, 1):
+            by_type[qtype].append(result_label)
+            scored_by_qid[qid] = result_label
+        else:
+            errors += 1
+
+    all_labels = [value for values in by_type.values() for value in values]
     overall_acc = accuracy(all_labels)
     lo, hi = bootstrap_ci(all_labels)
+    retrieval = retrieval_report(results, dataset)
 
     print(f"\n{'═' * 60}")
     print(f"  {label}")
     print(f"{'═' * 60}")
+    print(f"  Вопросов всего:  {total}")
     print(f"  Вопросов оценено: {len(all_labels)}")
+    print(f"  Ошибок judge:     {errors} ({errors / total:.1%})" if total else "  Ошибок judge:     0")
     print(f"  Overall Accuracy: {overall_acc:.1%}  [{lo:.1%}, {hi:.1%}] 95% CI")
     print(f"{'─' * 60}")
     print(f"  {'Тип вопроса':<35} {'N':>4}  {'Acc':>6}  {'95% CI'}")
@@ -173,64 +276,79 @@ def report(
 
     type_stats = {}
     for qtype in sorted(by_type):
-        lbls = by_type[qtype]
-        acc = accuracy(lbls)
-        lo_t, hi_t = bootstrap_ci(lbls)
-        print(f"  {qtype:<35} {len(lbls):>4}  {acc:>6.1%}  [{lo_t:.1%}, {hi_t:.1%}]")
-        type_stats[qtype] = {"n": len(lbls), "acc": acc, "ci": (lo_t, hi_t)}
+        labels = by_type[qtype]
+        acc = accuracy(labels)
+        lo_t, hi_t = bootstrap_ci(labels)
+        print(f"  {qtype:<35} {len(labels):>4}  {acc:>6.1%}  [{lo_t:.1%}, {hi_t:.1%}]")
+        type_stats[qtype] = {"n": len(labels), "acc": acc, "ci": (lo_t, hi_t)}
+
+    if retrieval:
+        print(f"{'─' * 60}")
+        print(
+            "  Retrieval:"
+            f" R@1={retrieval['recall@1']:.1%}"
+            f" R@3={retrieval['recall@3']:.1%}"
+            f" R@5={retrieval['recall@5']:.1%}"
+            f" MRR={retrieval['mrr']:.3f}"
+            f" NDCG@5={retrieval['ndcg@5']:.3f}"
+        )
 
     print(f"{'═' * 60}\n")
 
     return {
         "label": label,
-        "n": len(all_labels),
+        "n_total": total,
+        "n_scored": len(all_labels),
+        "n_errors": errors,
         "overall_acc": overall_acc,
         "ci": (lo, hi),
         "by_type": type_stats,
-        "labels": all_labels,
-        "labels_by_qid": results,
+        "scored_by_qid": scored_by_qid,
+        "retrieval": retrieval,
     }
 
 
 def compare_two(stats_a: dict, stats_b: dict):
-    """Сравнение двух систем с McNemar's test на общих вопросах."""
+    """Сравнение двух систем с McNemar's test на общих корректно оценённых вопросах."""
 
-    qids_a = set(stats_a["labels_by_qid"])
-    qids_b = set(stats_b["labels_by_qid"])
+    qids_a = set(stats_a["scored_by_qid"])
+    qids_b = set(stats_b["scored_by_qid"])
     common = sorted(qids_a & qids_b)
 
     if not common:
-        print("Нет общих question_id для сравнения.")
+        print("Нет общих question_id со скорингом для сравнения.")
         return
 
-    labels_a = [stats_a["labels_by_qid"][qid] for qid in common]
-    labels_b = [stats_b["labels_by_qid"][qid] for qid in common]
+    labels_a = [stats_a["scored_by_qid"][qid] for qid in common]
+    labels_b = [stats_b["scored_by_qid"][qid] for qid in common]
 
-    chi2, p = mcnemar_test(labels_a, labels_b)
-
+    chi2, p, b, c = mcnemar_test(labels_a, labels_b)
     acc_a = accuracy(labels_a)
     acc_b = accuracy(labels_b)
     delta = acc_a - acc_b
+    lo, hi = paired_bootstrap_delta_ci(labels_a, labels_b)
 
     print(f"{'═' * 60}")
     print(f"  Сравнение: {stats_a['label']} vs {stats_b['label']}")
     print(f"{'─' * 60}")
-    print(f"  Общих вопросов: {len(common)}")
+    print(f"  Общих оценённых вопросов: {len(common)}")
     print(f"  {stats_a['label']:30s}: {acc_a:.1%}")
     print(f"  {stats_b['label']:30s}: {acc_b:.1%}")
-    print(f"  Δ (A − B): {delta:+.1%}")
+    print(f"  Δ (A − B): {delta:+.1%}  [{lo:+.1%}, {hi:+.1%}] 95% CI")
     print(f"{'─' * 60}")
-    print(f"  McNemar's test:")
+    print("  McNemar's test:")
+    print(f"    discordant A=1,B=0: {b}")
+    print(f"    discordant A=0,B=1: {c}")
     print(f"    χ² = {chi2:.3f}")
     print(f"    p  = {p:.4f}  {'*** ЗНАЧИМО (p<0.05)' if p < 0.05 else '(не значимо)'}")
     if p < 0.001:
-        print(f"         p < 0.001 *** высокая значимость")
+        print("         p < 0.001 *** высокая значимость")
     elif p < 0.01:
-        print(f"         p < 0.01  ** значимо")
+        print("         p < 0.01  ** значимо")
     elif p < 0.05:
-        print(f"         p < 0.05  * значимо")
+        print("         p < 0.05  * значимо")
     else:
-        print(f"         H0 не отвергается — разница случайна")
+        print("         H0 не отвергается — разница может быть случайной")
     print(f"{'═' * 60}\n")
 
 
@@ -239,13 +357,13 @@ def compare_two(stats_a: dict, stats_b: dict):
 # ─────────────────────────────────────────────────────────────────────────────
 
 def main():
-    p = argparse.ArgumentParser(description="Статистический анализ результатов LongMemEval")
-    p.add_argument("results", help="JSONL с autoeval_label (вывод evaluate_qa.py)")
-    p.add_argument("dataset", help="Исходный longmemeval_*.json")
-    p.add_argument("--compare", help="Второй JSONL для сравнения (McNemar's test)")
-    p.add_argument("--labels", nargs=2, default=["System A", "System B"],
-                   help="Имена систем для сравнения")
-    args = p.parse_args()
+    parser = argparse.ArgumentParser(description="Статистический анализ результатов LongMemEval")
+    parser.add_argument("results", help="JSONL с autoeval_label")
+    parser.add_argument("dataset", help="Исходный longmemeval_*.json")
+    parser.add_argument("--compare", help="Второй JSONL для сравнения (McNemar's test)")
+    parser.add_argument("--labels", nargs=2, default=["System A", "System B"],
+                        help="Имена систем для сравнения")
+    args = parser.parse_args()
 
     dataset = load_dataset(args.dataset)
 

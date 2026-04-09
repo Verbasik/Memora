@@ -11,6 +11,8 @@ import shutil
 import tempfile
 from pathlib import Path
 
+from memora_longmemeval.modes import MODE_MEMORA_MIN, is_memora_mode, uses_kg
+
 MEMORA_ROOT = Path(__file__).parent.parent
 
 
@@ -31,9 +33,10 @@ class MemoraWorkspace:
             ws.kg_path        # Path к knowledge_graph.db
     """
 
-    def __init__(self, keep: bool = False):
+    def __init__(self, keep: bool = False, mode: str = MODE_MEMORA_MIN):
         """keep=True — не удалять после выхода (для отладки)."""
         self._keep = keep
+        self.mode = mode
         self._tmpdir: tempfile.TemporaryDirectory | None = None
         self.path: Path | None = None
 
@@ -51,11 +54,15 @@ class MemoraWorkspace:
 
     @property
     def sessions_dir(self) -> Path:
-        return self.path / "memory-bank" / ".local" / "SESSIONS"
+        if is_memora_mode(self.mode):
+            return self.path / "memory-bank" / ".local" / "SESSIONS"
+        return self.path / "history" / "SESSIONS"
 
     @property
     def local_dir(self) -> Path:
-        return self.path / "memory-bank" / ".local"
+        if is_memora_mode(self.mode):
+            return self.path / "memory-bank" / ".local"
+        return self.path / "history"
 
     @property
     def kg_path(self) -> Path:
@@ -67,35 +74,43 @@ class MemoraWorkspace:
         # Директории
         self.sessions_dir.mkdir(parents=True, exist_ok=True)
 
-        # CLAUDE.md → указывает агента на AGENTS.md
-        (self.path / "CLAUDE.md").write_text(_CLAUDE_MD, encoding="utf-8")
+        if is_memora_mode(self.mode):
+            # CLAUDE.md → указывает агента на AGENTS.md
+            (self.path / "CLAUDE.md").write_text(_CLAUDE_MD, encoding="utf-8")
 
-        # AGENTS.md
-        src = MEMORA_ROOT / "AGENTS.md"
-        if src.exists():
-            shutil.copy(src, self.path / "AGENTS.md")
+            # AGENTS.md
+            src = MEMORA_ROOT / "AGENTS.md"
+            if src.exists():
+                shutil.copy(src, self.path / "AGENTS.md")
 
-        # .claude/skills/ — все skills
-        src_skills = MEMORA_ROOT / ".claude" / "skills"
-        if src_skills.exists():
-            shutil.copytree(src_skills, self.path / ".claude" / "skills")
+            # .claude/skills/ — все skills
+            src_skills = MEMORA_ROOT / ".claude" / "skills"
+            if src_skills.exists():
+                shutil.copytree(src_skills, self.path / ".claude" / "skills")
 
-        # .claude/rules/
-        src_rules = MEMORA_ROOT / ".claude" / "rules"
-        if src_rules.exists():
-            shutil.copytree(src_rules, self.path / ".claude" / "rules")
+            # .claude/rules/
+            src_rules = MEMORA_ROOT / ".claude" / "rules"
+            if src_rules.exists():
+                shutil.copytree(src_rules, self.path / ".claude" / "rules")
 
-        # memory-bank/INDEX.md
-        src_index = MEMORA_ROOT / "memory-bank" / "INDEX.md"
-        if src_index.exists():
-            dst_mb = self.path / "memory-bank"
-            dst_mb.mkdir(exist_ok=True)
-            shutil.copy(src_index, dst_mb / "INDEX.md")
+            # memory-bank/INDEX.md
+            src_index = MEMORA_ROOT / "memory-bank" / "INDEX.md"
+            if src_index.exists():
+                dst_mb = self.path / "memory-bank"
+                dst_mb.mkdir(exist_ok=True)
+                shutil.copy(src_index, dst_mb / "INDEX.md")
 
-        # memory-bank/PATTERNS/
-        src_patterns = MEMORA_ROOT / "memory-bank" / "PATTERNS"
-        if src_patterns.exists():
-            shutil.copytree(src_patterns, self.path / "memory-bank" / "PATTERNS")
+            # memory-bank/PATTERNS/
+            src_patterns = MEMORA_ROOT / "memory-bank" / "PATTERNS"
+            if src_patterns.exists():
+                shutil.copytree(src_patterns, self.path / "memory-bank" / "PATTERNS")
+
+            # memory-bank/scripts/ — only for full mode where KG is part of the claim
+            src_scripts = MEMORA_ROOT / "memory-bank" / "scripts"
+            if uses_kg(self.mode) and src_scripts.exists():
+                shutil.copytree(src_scripts, self.path / "memory-bank" / "scripts")
+        else:
+            (self.path / "README_BENCH.md").write_text(_FLAT_BASELINE_README, encoding="utf-8")
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -112,4 +127,17 @@ Read memory-bank/INDEX.md for navigation.
 After restoring context with memory-restore, answer the user's question.
 Output ONLY the answer in this format: `ANSWER: <your answer>`
 If uncertain: `ANSWER: I don't know`
+"""
+
+
+_FLAT_BASELINE_README = """\
+# LongMemEval Flat Baseline Workspace
+
+This workspace intentionally omits Memora scaffolding.
+
+Available history lives under:
+
+- `history/SESSIONS/`
+
+Read the session files directly and answer the benchmark question.
 """

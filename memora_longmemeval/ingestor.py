@@ -15,7 +15,8 @@ import sys
 from datetime import datetime
 from pathlib import Path
 
-from memora_longmemeval.session_adapter import write_sessions
+from memora_longmemeval.modes import MODE_MEMORA_MIN, is_memora_mode, uses_kg
+from memora_longmemeval.session_adapter import SessionArtifact, write_sessions
 
 # KG — добавляем путь к scripts
 _SCRIPTS_DIR = Path(__file__).parent.parent / "memory-bank" / "scripts"
@@ -26,53 +27,74 @@ def ingest(
     item: dict,
     workspace_path: Path,
     sessions_dir: Path,
+    mode: str = MODE_MEMORA_MIN,
 ) -> dict:
     """
     Полный ingestion одного LongMemEval вопроса в Memora workspace.
 
     Возвращает dict с метриками: n_sessions, n_kg_triples, etc.
     """
-    haystack_sessions  = item["haystack_sessions"]
-    haystack_dates     = item["haystack_dates"]
-    haystack_ids       = item["haystack_session_ids"]
-    answer_session_ids = item.get("answer_session_ids", [])
-    question_date      = item.get("question_date", "unknown")
+    haystack_sessions = item["haystack_sessions"]
+    haystack_dates = item["haystack_dates"]
+    haystack_ids = item["haystack_session_ids"]
+    question_date = item.get("question_date", "unknown")
+
+    materialized = sorted(
+        zip(haystack_dates, haystack_ids, haystack_sessions),
+        key=lambda entry: (_datetime_sort_key(entry[0]), entry[1]),
+    )
+    sorted_dates = [entry[0] for entry in materialized]
+    sorted_ids = [entry[1] for entry in materialized]
+    sorted_sessions = [entry[2] for entry in materialized]
 
     # ── 1. Записываем SESSIONS/*.md ───────────────────────────────────────────
-    session_paths = write_sessions(
-        haystack_sessions=haystack_sessions,
-        haystack_dates=haystack_dates,
-        haystack_session_ids=haystack_ids,
+    session_artifacts = write_sessions(
+        haystack_sessions=sorted_sessions,
+        haystack_dates=sorted_dates,
+        haystack_session_ids=sorted_ids,
         sessions_dir=sessions_dir,
-        answer_session_ids=answer_session_ids,
+        mode=mode,
     )
 
-    # ── 2. Строим CURRENT.md — компактный индекс всех сессий ─────────────────
-    _write_current(
-        workspace_path=workspace_path,
-        sessions=list(zip(haystack_dates, haystack_ids, haystack_sessions)),
-        question_date=question_date,
-    )
+    # ── 2. Строим CURRENT.md / HANDOFF.md только для Memora режимов ──────────
+    if is_memora_mode(mode):
+        _write_current(
+            workspace_path=workspace_path,
+            sessions=session_artifacts,
+            question_date=question_date,
+        )
 
-    # ── 3. Пишем HANDOFF.md с контекстом ──────────────────────────────────────
-    _write_handoff(
-        workspace_path=workspace_path,
-        n_sessions=len(haystack_sessions),
-        date_range=(min(haystack_dates), max(haystack_dates)),
-        question_date=question_date,
-    )
+        _write_handoff(
+            workspace_path=workspace_path,
+            n_sessions=len(sorted_sessions),
+            date_range=(min(sorted_dates), max(sorted_dates)),
+            question_date=question_date,
+            mode=mode,
+        )
 
-    # ── 4. Наполняем Knowledge Graph ──────────────────────────────────────────
-    n_kg = _populate_kg(
-        workspace_path=workspace_path,
-        haystack_dates=haystack_dates,
-        haystack_ids=haystack_ids,
-        haystack_sessions=haystack_sessions,
-    )
+    # ── 3. Наполняем Knowledge Graph только для Memora Full ──────────────────
+    n_kg = 0
+    if uses_kg(mode):
+        n_kg = _populate_kg(
+            workspace_path=workspace_path,
+            haystack_dates=sorted_dates,
+            haystack_ids=sorted_ids,
+            haystack_sessions=sorted_sessions,
+        )
 
     return {
-        "n_sessions": len(haystack_sessions),
+        "n_sessions": len(sorted_sessions),
         "n_kg_triples": n_kg,
+        "session_map": [
+            {
+                "public_id": artifact.public_id,
+                "source_id": artifact.source_id,
+                "path": str(artifact.path),
+                "relative_path": artifact.path.relative_to(workspace_path).as_posix(),
+                "created_at": artifact.created_at,
+            }
+            for artifact in session_artifacts
+        ],
     }
 
 
@@ -82,15 +104,14 @@ def ingest(
 
 def _write_current(
     workspace_path: Path,
-    sessions: list[tuple[str, str, list[dict]]],
+    sessions: list[SessionArtifact],
     question_date: str,
 ) -> None:
     """
     Записывает CURRENT.md с индексом ВСЕХ сессий.
 
-    Это ключевой механизм: memory-restore читает CURRENT.md на Layer 2,
-    поэтому агент видит полный список сессий ещё до Essential Story (Layer 1.5).
-    При > 20 сессиях сжимаем до 2 строк на сессию.
+    Для benchmark не включаем содержательные превью, чтобы избежать leakage.
+    CURRENT.md даёт только нейтральную навигацию по времени и файлам.
     """
     lines = [
         "# Current",
@@ -105,17 +126,13 @@ def _write_current(
         "",
         "Все доступные сессии в `memory-bank/.local/SESSIONS/` — читай файлы для деталей.",
         "",
-        "| Дата | Session ID | Первое сообщение |",
+        "| Дата | Session ID | Файл |",
         "|---|---|---|",
     ]
 
-    for date_str, session_id, turns in sessions:
-        first_msg = ""
-        for t in turns:
-            if t.get("role") == "user":
-                first_msg = t.get("content", "")[:80].replace("\n", " ").replace("|", "╎")
-                break
-        lines.append(f"| {date_str} | {session_id} | {first_msg} |")
+    for session in sessions:
+        rel_path = session.path.relative_to(workspace_path).as_posix()
+        lines.append(f"| {session.created_at} | {session.public_id} | `{rel_path}` |")
 
     lines += [
         "",
@@ -138,6 +155,7 @@ def _write_handoff(
     n_sessions: int,
     date_range: tuple[str, str],
     question_date: str,
+    mode: str,
 ) -> None:
     content = f"""\
 # Handoff — {datetime.now().strftime('%Y-%m-%d %H:%M')}
@@ -150,13 +168,13 @@ def _write_handoff(
 Файлы: memory-bank/.local/SESSIONS/*.md
 
 ## Learned
-История переписки загружена. Все сессии проиндексированы в CURRENT.md.
-Knowledge Graph содержит темпоральные факты о сессиях.
+История переписки загружена. CURRENT.md содержит нейтральный индекс всех сессий.
+{"Knowledge Graph содержит темпоральные факты о сессиях." if uses_kg(mode) else "Knowledge Graph в этом режиме не используется."}
 
 ## Completed
 - Записаны все SESSIONS/*.md в хронологическом порядке
-- CURRENT.md содержит полный индекс {n_sessions} сессий
-- KG наполнен темпоральными фактами
+- CURRENT.md содержит полный нейтральный индекс {n_sessions} сессий
+{"- KG наполнен темпоральными фактами" if uses_kg(mode) else "- KG отключён для этого benchmark-режима"}
 
 ## Next steps
 1. Восстановить контекст через memory-restore
@@ -164,6 +182,7 @@ Knowledge Graph содержит темпоральные факты о сесс
 
 ## Risks
 - Ответ может быть в любой из {n_sessions} сессий; проверяй CURRENT.md для навигации
+- Индекс намеренно не содержит содержательных подсказок из текста сессий
 
 ## Active files
 memory-bank/.local/SESSIONS/*.md | memory-bank/.local/CURRENT.md
@@ -231,17 +250,6 @@ def _populate_kg(
                 seen_dates.add(iso_date)
                 n += 1
 
-            # Если в сессии есть evidence turns — помечаем
-            has_evidence = any(t.get("has_answer") for t in turns)
-            if has_evidence:
-                kg.add_triple(
-                    subject=session_id,
-                    predicate="contains_answer",
-                    obj="true",
-                    valid_from=date_str,
-                )
-                n += 1
-
             # Извлекаем упоминаемые имена собственные (простая эвристика)
             for turn in turns:
                 content = turn.get("content", "")
@@ -272,6 +280,23 @@ def _normalize_date(date_str: str) -> str:
     if m:
         return f"{m.group(1)}-{m.group(2)}-{m.group(3)}"
     return date_str[:10]  # fallback: берём первые 10 символов
+
+
+def _datetime_sort_key(date_str: str) -> str:
+    """
+    Нормализованный ключ сортировки для LongMemEval дат.
+
+    "2023/04/10 (Mon) 17:50" -> "2023-04-10T17:50"
+    """
+    import re
+
+    match = re.match(r"(\d{4})[/-](\d{2})[/-](\d{2}).*?(\d{2}):(\d{2})", date_str)
+    if match:
+        return (
+            f"{match.group(1)}-{match.group(2)}-{match.group(3)}"
+            f"T{match.group(4)}:{match.group(5)}"
+        )
+    return _normalize_date(date_str) + "T00:00"
 
 
 def _extract_names(text: str) -> list[str]:

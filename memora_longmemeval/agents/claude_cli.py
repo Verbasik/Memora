@@ -1,7 +1,7 @@
 """
 claude_cli.py — обёртка над Claude Code CLI для headless-режима.
 
-Использует --output-format json для захвата tool calls и верификации
+Использует --output-format stream-json для захвата tool calls и верификации
 что агент действительно читал Memora файлы (HANDOFF, CURRENT, SESSIONS/).
 """
 
@@ -13,6 +13,13 @@ import re
 import shutil
 import subprocess
 from pathlib import Path
+
+from memora_longmemeval.modes import (
+    MODE_FLAT_BASELINE,
+    MODE_MEMORA_FULL,
+    is_memora_mode,
+    sessions_prefix,
+)
 
 
 _CLAUDE_CANDIDATES = [
@@ -27,9 +34,6 @@ _MEMORA_CORE_FILES = {
     "handoff":  "memory-bank/.local/HANDOFF.md",
     "current":  "memory-bank/.local/CURRENT.md",
 }
-_SESSIONS_PREFIX = "memory-bank/.local/SESSIONS/"
-
-
 def _find_claude() -> str:
     found = shutil.which("claude")
     if found:
@@ -47,7 +51,7 @@ class ClaudeAgent:
     """
     Запускает Claude Code CLI в headless-режиме с верификацией Memora usage.
 
-    Использует --output-format json чтобы захватить все tool calls и проверить
+    Использует --output-format stream-json чтобы захватить все tool calls и проверить
     что агент реально читал HANDOFF.md, CURRENT.md и SESSIONS/*.md.
     """
 
@@ -61,7 +65,13 @@ class ClaudeAgent:
         self.timeout = timeout
         self._binary = binary or _find_claude()
 
-    def answer(self, question: str, question_date: str, workspace: Path) -> tuple[str, dict]:
+    def answer(
+        self,
+        question: str,
+        question_date: str,
+        workspace: Path,
+        mode: str,
+    ) -> tuple[str, dict]:
         """
         Запускает агента и возвращает (hypothesis, memora_trace).
 
@@ -72,7 +82,7 @@ class ClaudeAgent:
             files_read:     list — все прочитанные файлы
             memora_used:    bool — True если читал хотя бы CURRENT.md + 1 session
         """
-        prompt = _build_prompt(question, question_date)
+        prompt = _build_prompt(question, question_date, mode)
 
         cmd = [
             self._binary,
@@ -93,9 +103,9 @@ class ClaudeAgent:
                 text=True,
                 timeout=self.timeout,
             )
-            return _parse_output(result.stdout)
+            return _parse_output(result.stdout, mode)
         except subprocess.TimeoutExpired:
-            return "I don't know", _empty_trace()
+            return "I don't know", _empty_trace(mode)
         except FileNotFoundError:
             raise RuntimeError(f"Claude CLI не найден: {self._binary}")
 
@@ -107,7 +117,7 @@ class ClaudeAgent:
 # Output parsing
 # ─────────────────────────────────────────────────────────────────────────────
 
-def _parse_output(raw: str) -> tuple[str, dict]:
+def _parse_output(raw: str, mode: str) -> tuple[str, dict]:
     """
     Парсит NDJSON stream-json вывод Claude CLI (--output-format stream-json --verbose).
 
@@ -119,7 +129,7 @@ def _parse_output(raw: str) -> tuple[str, dict]:
       - финальный текст из event type=result
       - все tool_use блоки type=Read → список прочитанных файлов
     """
-    trace = _empty_trace()
+    trace = _empty_trace(mode)
     hypothesis = "I don't know"
     files_read: list[str] = []
 
@@ -167,9 +177,14 @@ def _parse_output(raw: str) -> tuple[str, dict]:
     trace["read_current"] = any(
         _MEMORA_CORE_FILES["current"] in f for f in files_read
     )
-    sessions = [f for f in files_read if _SESSIONS_PREFIX in f]
+    session_prefix = sessions_prefix(mode)
+    sessions = [f for f in files_read if session_prefix in f]
     trace["sessions_read"] = len(sessions)
-    trace["memora_used"] = trace["read_current"] and trace["sessions_read"] > 0
+    trace["retrieved_files"] = sessions
+    if is_memora_mode(mode):
+        trace["memora_used"] = (
+            trace["read_handoff"] and trace["read_current"] and trace["sessions_read"] > 0
+        )
 
     return hypothesis, trace
 
@@ -179,7 +194,7 @@ def _to_relative(path: str) -> str:
     if not path:
         return ""
     # Убираем всё до memory-bank/ или .claude/
-    for marker in ("memory-bank/", ".claude/", "AGENTS.md", "CLAUDE.md"):
+    for marker in ("memory-bank/", "history/", ".claude/", "AGENTS.md", "CLAUDE.md"):
         idx = path.find(marker)
         if idx != -1:
             return path[idx:]
@@ -198,13 +213,14 @@ def _extract_answer_text(text: str) -> str:
     return "I don't know"
 
 
-def _empty_trace() -> dict:
+def _empty_trace(mode: str) -> dict:
     return {
         "read_handoff":  False,
         "read_current":  False,
         "sessions_read": 0,
         "files_read":    [],
-        "memora_used":   False,
+        "retrieved_files": [],
+        "memora_used":   False if is_memora_mode(mode) else None,
     }
 
 
@@ -212,15 +228,37 @@ def _empty_trace() -> dict:
 # Prompt
 # ─────────────────────────────────────────────────────────────────────────────
 
-def _build_prompt(question: str, question_date: str) -> str:
+def _build_prompt(question: str, question_date: str, mode: str) -> str:
+    if mode == MODE_FLAT_BASELINE:
+        return f"""\
+The question was asked on {question_date}.
+
+You are in a flat benchmark workspace without Memora scaffolding.
+
+Read the relevant session files directly from:
+  - history/SESSIONS/
+
+Use file names and timestamps to decide which sessions matter.
+Output ONLY: ANSWER: <your answer>
+If the information is not found: ANSWER: I don't know
+
+Question: {question}"""
+
+    kg_hint = ""
+    if mode == MODE_MEMORA_FULL:
+        kg_hint = """
+  - If helpful, query the temporal KG via:
+    python3 memory-bank/scripts/knowledge_graph.py query <entity>"""
+
     return f"""\
 The question was asked on {question_date}.
 
 Step 1: Run memory-restore to load context.
   - Read memory-bank/.local/HANDOFF.md
-  - Read memory-bank/.local/CURRENT.md — it contains an index of ALL available sessions
+  - Read memory-bank/.local/CURRENT.md — it contains a neutral index of available sessions
   - Based on the session index in CURRENT.md, identify which sessions are relevant
   - Read those session files from memory-bank/.local/SESSIONS/
+{kg_hint}
 
 Step 2: Answer the question based on the loaded context.
 
