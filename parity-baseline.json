@@ -1,0 +1,256 @@
+{
+  "version": "1.0.0",
+  "updated": "2026-04-16",
+  "description": "Canonical parity baseline for the Memora adapter layer. Defines the minimum required capabilities that all supported providers must implement or explicitly document as a limitation.",
+  "spec_reference": "SPEC.md § I (FR-001 – FR-017)",
+
+  "providers": ["claude", "codex", "qwen", "opencode"],
+
+  "thresholds": {
+    "description": "Advisory hook thresholds. Must be consistent across all providers (FR-008).",
+    "REFLECT_THRESHOLD": 3,
+    "CONSOLIDATE_THRESHOLD": 5,
+    "GC_THRESHOLD": 20
+  },
+
+  "entry_contract": {
+    "description": "Each provider adapter must route the agent to the canonical entry surfaces (FR-004).",
+    "canonical_surfaces": ["AGENTS.md", "memory-bank/INDEX.md"],
+    "provider_entry": {
+      "claude":    { "file": "CLAUDE.md",               "mechanism": "reads AGENTS.md explicitly" },
+      "codex":     { "file": ".codex/config.toml",      "mechanism": "agents_md fallback → AGENTS.md via CLAUDE.md" },
+      "qwen":      { "file": ".qwen/settings.json",     "mechanism": "context.fileName: [AGENTS.md]" },
+      "opencode":  { "file": ".opencode/commands/",     "mechanism": "commands reference memory-bank/ directly" }
+    }
+  },
+
+  "core_workflows": {
+    "description": "All 9 core memory workflows must be present in each provider adapter (FR-002, FR-003).",
+    "required": true,
+    "workflows": [
+      "memory-bootstrap",
+      "memory-restore",
+      "update-memory",
+      "memory-audit",
+      "memory-consolidate",
+      "memory-reflect",
+      "memory-gc",
+      "memory-clarify",
+      "memory-explorer"
+    ],
+    "provider_surfaces": {
+      "claude": {
+        "type": "skills + agent",
+        "files": {
+          "memory-bootstrap":   ".claude/skills/memory-bootstrap/SKILL.md",
+          "memory-restore":     ".claude/skills/memory-restore/SKILL.md",
+          "update-memory":      ".claude/skills/update-memory/SKILL.md",
+          "memory-audit":       ".claude/skills/memory-audit/SKILL.md",
+          "memory-consolidate": ".claude/skills/memory-consolidate/SKILL.md",
+          "memory-reflect":     ".claude/skills/memory-reflect/SKILL.md",
+          "memory-gc":          ".claude/skills/memory-gc/SKILL.md",
+          "memory-clarify":     ".claude/skills/memory-clarify/SKILL.md",
+          "memory-explorer":    ".claude/agents/memory-explorer.md"
+        },
+        "notes": "memory-explorer is implemented as a sub-agent rather than a skill; behavioral output is equivalent."
+      },
+      "codex": {
+        "type": "skills",
+        "files": {
+          "memory-bootstrap":   ".codex/skills/memory-bootstrap/SKILL.md",
+          "memory-restore":     ".codex/skills/memory-restore/SKILL.md",
+          "update-memory":      ".codex/skills/update-memory/SKILL.md",
+          "memory-audit":       ".codex/skills/memory-audit/SKILL.md",
+          "memory-consolidate": ".codex/skills/memory-consolidate/SKILL.md",
+          "memory-reflect":     ".codex/skills/memory-reflect/SKILL.md",
+          "memory-gc":          ".codex/skills/memory-gc/SKILL.md",
+          "memory-clarify":     ".codex/skills/memory-clarify/SKILL.md",
+          "memory-explorer":    ".codex/skills/memory-explorer/SKILL.md"
+        },
+        "notes": "Discovery path via .agents/skills/ symlinks pointing to .codex/skills/."
+      },
+      "qwen": {
+        "type": "agents + commands (dual surface)",
+        "files": {
+          "memory-bootstrap":   ".qwen/agents/memory-bootstrap.md",
+          "memory-restore":     ".qwen/agents/memory-restore.md",
+          "update-memory":      ".qwen/agents/update-memory.md",
+          "memory-audit":       ".qwen/agents/memory-audit.md",
+          "memory-consolidate": ".qwen/agents/memory-consolidate.md",
+          "memory-reflect":     ".qwen/agents/memory-reflect.md",
+          "memory-gc":          ".qwen/agents/memory-gc.md",
+          "memory-clarify":     ".qwen/agents/memory-clarify.md",
+          "memory-explorer":    ".qwen/agents/memory-explorer.md"
+        },
+        "notes": "Qwen maintains dual surface: .qwen/agents/ and .qwen/commands/ must stay in sync."
+      },
+      "opencode": {
+        "type": "commands",
+        "files": {
+          "memory-bootstrap":   ".opencode/commands/memory-bootstrap.md",
+          "memory-restore":     ".opencode/commands/memory-restore.md",
+          "update-memory":      ".opencode/commands/update-memory.md",
+          "memory-audit":       ".opencode/commands/memory-audit.md",
+          "memory-consolidate": ".opencode/commands/memory-consolidate.md",
+          "memory-reflect":     ".opencode/commands/memory-reflect.md",
+          "memory-gc":          ".opencode/commands/memory-gc.md",
+          "memory-clarify":     ".opencode/commands/memory-clarify.md",
+          "memory-explorer":    ".opencode/commands/memory-explorer.md"
+        }
+      }
+    }
+  },
+
+  "hooks": {
+    "description": "All 3 advisory hook types must be wired in each provider. Hooks must be non-blocking and advisory-only (FR-005, FR-006, FR-007, FR-008).",
+    "required": true,
+    "advisory_only": true,
+    "types": ["reflect", "consolidate", "gc"],
+    "path_resolution": "All providers must resolve script paths relative to the repository root, not the session working directory.",
+    "provider_config": {
+      "claude": {
+        "mechanism": "Stop hook array in settings.json",
+        "config_file": ".claude/settings.json",
+        "hook_files": [
+          ".claude/settings.json"
+        ],
+        "path_resolution": "$(git rev-parse --show-toplevel) in command string"
+      },
+      "codex": {
+        "mechanism": "Single Stop hook command via wrapper script in config.toml",
+        "config_file": ".codex/config.toml",
+        "hook_files": [
+          ".codex/config.toml"
+        ],
+        "path_resolution": "$(git rev-parse --show-toplevel) in command string",
+        "notes": "Codex supports only one [hooks.Stop] entry; run-stop-hooks.sh wrapper runs all three checks sequentially. Hook support marked experimental as of Codex CLI v0.114.0."
+      },
+      "qwen": {
+        "mechanism": "Stop hook array in settings.json",
+        "config_file": ".qwen/settings.json",
+        "hook_files": [
+          ".qwen/settings.json"
+        ],
+        "path_resolution": "$(git rev-parse --show-toplevel) in command string"
+      },
+      "opencode": {
+        "mechanism": "ES module plugins subscribing to session.idle and tool.execute.after events",
+        "config_file": ".opencode/plugins/",
+        "hook_files": [
+          ".opencode/plugins/reflect-trigger.js",
+          ".opencode/plugins/consolidate-trigger.js",
+          ".opencode/plugins/gc-trigger.js"
+        ],
+        "path_resolution": "execFileSync git rev-parse --show-toplevel using ctx.cwd; absolute path passed to execSync"
+      }
+    }
+  },
+
+  "guardrails": {
+    "description": "Security baseline for secret/PII protection (FR-009, FR-010, FR-011, FR-012).",
+    "baseline_patterns": [".env", ".env.*", "*.key", "*.pem", "*.p12", "*credentials*", "*secret*"],
+    "provider_enforcement": {
+      "claude": {
+        "level": "hard",
+        "mechanism": "settings.json permissions.deny rules + .claudeignore + .claude/rules/security.md",
+        "files": [".claude/settings.json", ".claudeignore", ".claude/rules/security.md", ".claude/rules/memory-bank.md"],
+        "notes": "Strongest enforcement among providers. Must not be weakened."
+      },
+      "codex": {
+        "level": "advisory",
+        "mechanism": "No native deny/ignore config in .codex/",
+        "files": [],
+        "compensating_controls": "AGENTS.md and workflow files include security guidance; memory-bank/POLICIES/ defines data handling rules.",
+        "notes": "Hard enforcement not natively supported. Documented limitation per FR-011."
+      },
+      "qwen": {
+        "level": "partial",
+        "mechanism": ".qwen/settings.qwenignore file-exclusion rules",
+        "files": [".qwen/settings.qwenignore"],
+        "notes": "Partial enforcement via ignore rules. No deny-list equivalent to Claude's permissions.deny."
+      },
+      "opencode": {
+        "level": "advisory",
+        "mechanism": "No native deny/ignore config in .opencode/",
+        "files": [],
+        "compensating_controls": "AGENTS.md and workflow files include security guidance; memory-bank/POLICIES/ defines data handling rules.",
+        "notes": "Hard enforcement not natively supported. Documented limitation per FR-011."
+      }
+    }
+  },
+
+  "documentation_surface": {
+    "description": "Documentation must accurately reflect actual capabilities without overclaiming parity (FR-015).",
+    "canonical_docs": [
+      "docs/TOOLCHAINS.md",
+      "docs/HOOKS.md",
+      ".claude/README.md",
+      ".codex/README.md",
+      ".qwen/README.md",
+      ".opencode/README.md"
+    ],
+    "documented_exceptions": [
+      {
+        "id": "exc-001",
+        "provider": "codex",
+        "area": "hooks",
+        "description": "Codex hooks support is marked experimental (Codex CLI v0.114.0+). Hook format may change."
+      },
+      {
+        "id": "exc-002",
+        "provider": "opencode",
+        "area": "guardrails",
+        "description": "OpenCode does not support native deny/ignore enforcement. Advisory-only via workflow guidance."
+      },
+      {
+        "id": "exc-003",
+        "provider": "codex",
+        "area": "guardrails",
+        "description": "Codex does not support native deny/ignore enforcement. Advisory-only via workflow guidance."
+      },
+      {
+        "id": "exc-004",
+        "provider": "claude",
+        "area": "workflows",
+        "description": "memory-explorer is implemented as a sub-agent (.claude/agents/) rather than a skill (.claude/skills/). Behavioral output is equivalent to other providers."
+      }
+    ]
+  },
+
+  "verification": {
+    "description": "Automated checks that confirm parity baseline is maintained (FR-013).",
+    "test_file": "test/parity.js",
+    "checks": [
+      {
+        "id": "check-workflow-files",
+        "description": "All workflow files listed in core_workflows.provider_surfaces must exist on disk.",
+        "category": "core_workflows",
+        "automated": true
+      },
+      {
+        "id": "check-hook-config-files",
+        "description": "All hook config files listed in hooks.provider_config must exist on disk.",
+        "category": "hooks",
+        "automated": true
+      },
+      {
+        "id": "check-entry-contract",
+        "description": "Provider entry files must exist and reference canonical surfaces.",
+        "category": "entrypoint",
+        "automated": true
+      },
+      {
+        "id": "check-guardrail-files",
+        "description": "Hard-enforcement guardrail files must exist for providers that support them.",
+        "category": "guardrails",
+        "automated": true
+      },
+      {
+        "id": "check-hook-path-resolution",
+        "description": "OpenCode plugins must use repo-root path resolution (not relative cwd).",
+        "category": "hooks",
+        "automated": true
+      }
+    ]
+  }
+}
