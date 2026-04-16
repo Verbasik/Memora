@@ -111,19 +111,43 @@ This design is especially useful in AI-agent environments where predictability m
 
 ## 🔌 Per-toolchain integration
 
+All four providers run the same shell scripts in `memory-bank/scripts/`. What differs is the wiring mechanism and how the script path is resolved.
+
 ### Claude Code
-Uses `.claude/settings.json` hook definitions.
+
+- **Config:** `.claude/settings.json` — `hooks.Stop` array with three separate commands.
+- **Path resolution:** `$(git rev-parse --show-toplevel)` in each command string — works from any directory.
 
 ### Codex CLI
-Uses `.codex/config.toml` and the `run-stop-hooks.sh` wrapper.
+
+- **Config:** `.codex/config.toml` — single `[hooks.Stop]` entry calling `run-stop-hooks.sh`.
+- **Path resolution:** `$(git rev-parse --show-toplevel)` in the command string.
+- **⚠️ Note:** Hook support is experimental (Codex CLI v0.114.0+). A wrapper script is used because Codex supports only one stop hook entry. Hook format may change in future Codex releases.
 
 ### Qwen Code
-Uses `.qwen/settings.json` with hook definitions.
+
+- **Config:** `.qwen/settings.json` — `hooks.Stop` array, same structure as Claude Code.
+- **Path resolution:** `$(git rev-parse --show-toplevel)` in each command string — works from any directory.
 
 ### OpenCode
-Uses `.opencode/plugins/*.js` plugins that invoke the shell scripts.
+
+- **Config:** `.opencode/plugins/` — three ES module plugins (`reflect-trigger.js`, `consolidate-trigger.js`, `gc-trigger.js`).
+- **Mechanism:** Subscribes to `session.idle` and `tool.execute.after` events — event-driven, unlike the config-driven Stop hooks of the other providers.
+- **Path resolution:** `execFileSync("git", ["rev-parse", "--show-toplevel"], { cwd: ctx.cwd })` resolves the repo root before invoking the script, so hooks work correctly from any subdirectory.
 
 For full adapter details, see [Toolchains](./TOOLCHAINS.md).
+
+---
+
+## ⚠️ Known provider differences
+
+| Area | Claude Code | Codex CLI | Qwen Code | OpenCode |
+|---|---|---|---|---|
+| Hook mechanism | Stop array (JSON) | Single Stop command (TOML) | Stop array (JSON) | Event plugins (JS) |
+| Path resolution | `git rev-parse` in command | `git rev-parse` in command | `git rev-parse` in command | `execFileSync git rev-parse` |
+| Hook support status | Stable | Experimental ¹ | Stable | Stable |
+
+> ¹ Codex hook support added in v0.114.0 (March 2026). Verify format after Codex upgrades.
 
 ## ✅ Activation and verification
 

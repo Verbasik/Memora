@@ -159,11 +159,42 @@ Choose OpenCode when you want:
 | Area | Claude Code | Codex CLI | Qwen Code | OpenCode |
 |---|:---:|:---:|:---:|:---:|
 | Adapter files included | ✅ | ✅ | ✅ | ✅ |
-| Hook integration available | ✅ | ✅ | ✅ | ✅ |
-| Workflow files included | ✅ | ✅ | ✅ | ✅ |
+| Core workflow files (9) | ✅ | ✅ | ✅ | ✅ |
+| Hook integration | ✅ | ✅ ¹ | ✅ | ✅ ² |
+| Hard guardrail enforcement | ✅ | ⚠️ ³ | ⚠️ ⁴ | ⚠️ ³ |
 | Shared memory-bank model | ✅ | ✅ | ✅ | ✅ |
 
-This is one of Memora’s strongest product properties today: **the architecture is shared, the adapters are toolchain-specific**.
+**Legend:** ✅ supported · ⚠️ advisory-only or partial (see notes below)
+
+> ¹ **Codex:** Hook support is experimental (added in Codex CLI v0.114.0). A single `[hooks.Stop]` entry is supported via a wrapper script. Hook format may change in future Codex releases.
+>
+> ² **OpenCode:** Hooks are implemented as ES module plugins subscribing to `session.idle` and `tool.execute.after` events — a different mechanism than the config-driven Stop hooks used by Claude Code and Qwen Code.
+>
+> ³ **Codex / OpenCode:** No native deny/ignore enforcement configuration. Secret and PII protection is advisory-only, provided through workflow guidance and `memory-bank/POLICIES/`. See [Security](./SECURITY.md) for compensating controls.
+>
+> ⁴ **Qwen:** Partial enforcement via `.qwen/settings.qwenignore`. No deny-list equivalent to Claude Code’s `permissions.deny`.
+
+The architecture is shared, the adapters are toolchain-specific. Parity is verified at the adapter layer; native enforcement capabilities differ between providers.
+
+---
+
+## ⚠️ Provider-specific limitations
+
+### Codex CLI — experimental hook support
+
+Codex hook integration was added in v0.114.0 (March 2026) and is marked experimental. The TOML hook format may change. If hooks stop working after a Codex upgrade, check `codex --help | grep hook` for the current format.
+
+### OpenCode — advisory-only guardrails
+
+OpenCode does not expose a deny/ignore configuration equivalent to Claude Code’s `permissions.deny`. All guardrail protection for OpenCode is advisory: workflows and `AGENTS.md` instruct the agent on secret handling, but the toolchain does not enforce it at the platform level.
+
+### Qwen Code — dual workflow surface
+
+Qwen maintains two mirrored surfaces (`.qwen/agents/` and `.qwen/commands/`). Both must stay in sync. Drift between them is not caught by the adapter layer alone.
+
+### Claude Code — memory-explorer as sub-agent
+
+Claude Code implements `memory-explorer` as a sub-agent (`.claude/agents/`) rather than a skill (`.claude/skills/`). The behavioral output is equivalent; the invocation surface differs from other providers.
 
 ---
 
