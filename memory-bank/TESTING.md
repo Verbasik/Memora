@@ -21,7 +21,7 @@ provides:
   - "ci_pipeline"
 canonical_owner: "Все вопросы о тестировании, CI и проверках перед коммитом"
 last_verified: "[ГГГГ-ММ-ДД]"
-max_lines: 60
+max_lines: 120
 ---
 
 # TESTING

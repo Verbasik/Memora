@@ -17,7 +17,7 @@ provides:
   - "open_questions_registry"
 canonical_owner: "Все нерешённые вопросы, пробелы в знаниях и неоднозначности"
 last_verified: "[ГГГГ-ММ-ДД]"
-max_lines: 60
+max_lines: 80
 ---
 
 # OPEN_QUESTIONS

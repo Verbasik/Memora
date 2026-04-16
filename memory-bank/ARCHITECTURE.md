@@ -23,7 +23,7 @@ provides:
   - "data_flows"
   - "integration_points"
 last_verified: "[ГГГГ-ММ-ДД]"
-max_lines: 120
+max_lines: 150
 ---
 
 # ARCHITECTURE
