@@ -1,7 +1,9 @@
 #!/usr/bin/env bash
 # .githooks/pre-commit
 # Runs before each git commit.
-# Validates front-matter in any staged memory-bank/*.md files.
+# Validates memory-bank/*.md files (schema, links, session limits, privacy).
+# Intentionally uses --scope memory so that README/docs drift never blocks
+# a valid memory-bank commit. Full repo-docs validation runs in CI.
 #
 # Setup (auto via `init.sh` inside a git repo):
 #   git config core.hooksPath .githooks
@@ -25,20 +27,21 @@ if ! command -v node &>/dev/null; then
   exit 0
 fi
 
-# ── Run validation ─────────────────────────────────────────────────────────────
+# ── Run memory-scope validation ────────────────────────────────────────────────
 echo ""
-echo "🔍  memora validate (memory-bank front-matter)..."
+echo "🔍  memora validate --scope memory ..."
 echo ""
 
-if node bin/memora.js validate 2>&1; then
+if node bin/memora.js validate --scope memory 2>&1; then
   echo ""
-  echo "✓   All memory-bank files are valid."
+  echo "✓   memory-bank files are valid."
   echo ""
 else
   echo ""
   echo "✗   Validation failed. Fix the errors above before committing."
-  echo "    Run:  node bin/memora.js validate"
-  echo "    Tip:  node bin/memora.js validate --watch  for live feedback"
+  echo "    Run:  node bin/memora.js validate --scope memory"
+  echo "    Tip:  node bin/memora.js validate --scope memory --watch  for live feedback"
+  echo "    Note: README/docs checks run in CI (--scope repo-docs)."
   echo ""
   exit 1
 fi
