@@ -333,7 +333,7 @@ Memora is **actively developed**. The roadmap builds on our solid foundation:
 
 ### Recently Shipped
 
-- 🔄 **Provider Lifecycle Layer (Phase 3, Steps 1–4)** — `MemoryProvider` base class + `ProviderRegistry` orchestrator (failure isolation, fan-out hooks) + `LocalMemoryProvider` built-in (wraps TranscriptStore) + public API (`getProviderRegistry`, `onTurnStart`, `onSessionEnd`, `onPreCompress`, `onMemoryWrite`, `onDelegation`) — tests in progress (FR-014, FR-015)
+- ✅ **Provider Lifecycle Layer complete (Phase 3)** — `MemoryProvider` base class + `ProviderRegistry` orchestrator (failure isolation, fan-out hooks) + `LocalMemoryProvider` built-in (wraps TranscriptStore) + public API (`getProviderRegistry`, `onTurnStart`, `onSessionEnd`, `onPreCompress`, `onMemoryWrite`, `onDelegation`) + 135 tests (FR-014, FR-015)
 - ✅ **Transcript Recall Layer complete (Phase 2)** — full pipeline: `TranscriptStore` (JSONL, atomic writes) → `recall.js` (format + truncate + fenced block) → `lib/runtime/index.js` public API (`openTranscriptSession`, `appendTranscriptMessage`, `recallTranscripts`) → 28 integration tests (FR-002, FR-006, FR-007, FR-009, FR-010, FR-011, FR-016)
 - ✅ **Runtime security layer (Phase 1)** — `lib/runtime/`: security screening, frozen snapshots, fenced recall blocks (134 tests)
 - ✅ **Compatibility matrix** — Full feature matrix across all four toolchains ([docs/COMPATIBILITY.md](./docs/COMPATIBILITY.md))
@@ -341,7 +341,6 @@ Memora is **actively developed**. The roadmap builds on our solid foundation:
 
 ### Current Focus (Q2 2026)
 
-- 🧪 **Phase 3 tests (Step 5)** — Unit/integration tests for `MemoryProvider`, `ProviderRegistry`, `LocalMemoryProvider` and the Phase 3 public API
 - 🛠️ **Install diagnostics** — Better `memora doctor` output
 - 🤖 **Memory automation** — Smart consolidation and cleanup helpers
 

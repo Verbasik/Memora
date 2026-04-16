@@ -785,7 +785,7 @@ The runtime layer is a **read-and-screen gate**, not a replacement for the knowl
 - **Step 3** — `lib/runtime/index.js` public API: `openTranscriptSession`, `appendTranscriptMessage`, `recallTranscripts`, `resetTranscriptStore` ✓
 - **Step 4** — 28 integration tests (FR-002, FR-007, FR-009, FR-010, FR-011, FR-016) ✓
 
-### Phase 3 — 🔄 In Progress (2026-04-16)
+### Phase 3 — ✅ Complete (2026-04-16)
 
 **Step 1 — ✅ Shipped:**
 - `lib/runtime/provider.js` — `MemoryProvider` base class; all lifecycle methods as no-op defaults; `handleToolCall` throws by contract (FR-014 contract layer)
@@ -799,8 +799,8 @@ The runtime layer is a **read-and-screen gate**, not a replacement for the knowl
 **Step 4 — ✅ Shipped:**
 - `lib/runtime/index.js` extended: `getProviderRegistry`, `resetProviderRegistry`, convenience wrappers for 5 lifecycle hooks, low-level re-exports for all Phase 3 modules (FR-014, FR-015)
 
-**Step 5 — 📋 Next:**
-- Unit/integration tests for `MemoryProvider`, `ProviderRegistry`, `LocalMemoryProvider` and Phase 3 `index.js` API
+**Step 5 — ✅ Shipped:**
+- 135 tests across 4 suites: `provider.test.js` (29 unit), `provider-registry.test.js` (47 unit), `providers/local.test.js` (31 integration), `provider-index.test.js` (28 integration); full failure isolation and end-to-end lifecycle coverage (FR-014, FR-015)
 
 ---
 
