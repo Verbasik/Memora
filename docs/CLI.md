@@ -125,20 +125,35 @@ memora validate ./my-project
 
 ### Validate flags
 
+- `--scope memory|repo-docs|all`: Choose which surface to validate (default: `all`).
 - `--profile core|extended|governance`: Choose how strict and comprehensive validation should be.
 - `--strict`: Promote recommended-field warnings to errors.
 - `--format text|json`: Choose human-readable or machine-readable output.
 - `--watch`: Re-run validation when memory-bank markdown files change.
 
+### Validation scopes
+
+The `--scope` flag separates two independent validation surfaces:
+
+| Scope | What it checks |
+|-------|---------------|
+| `memory` | `memory-bank/**` — schema, frontmatter, session limits, secret/privacy scans, internal link integrity, ADR/INDEX integrity |
+| `repo-docs` | `README.md` and `docs/**` — internal link integrity of repository documentation |
+| `all` | Both `memory` and `repo-docs` combined (default) |
+
+Use `--scope memory` when you only care about memory-bank correctness — for example, in pre-commit hooks or focused authoring loops. Use `--scope repo-docs` to audit documentation links without touching memory validation.
+
 ### What it validates
 
-`memora validate` now covers three layers:
+`memora validate` covers schema, integrity, and hygiene across both surfaces:
 
 - schema-driven front matter validation using the JSON Schemas in `schemas/`,
-- cross-file integrity checks across `memory-bank/` and repository markdown links,
-- operational constraints such as `max_lines`, stale verification windows, and session bloat.
+- cross-file integrity checks inside `memory-bank/` (ADR, INDEX routing, internal links),
+- repository documentation link integrity (`README.md`, `docs/**`),
+- operational constraints: `max_lines`, stale verification windows, session bloat,
+- secret-like pattern detection and privacy tag checks.
 
-Profiles control how much of that surface is enforced:
+Profiles control enforcement depth:
 
 - `core`: base schema checks plus essential integrity and hygiene warnings,
 - `extended`: adds placeholder drift and deeper cross-file checks,
@@ -147,8 +162,18 @@ Profiles control how much of that surface is enforced:
 ### Validate usage
 
 ```bash
+# Default: validate all surfaces
 memora validate
-memora validate --strict
+
+# Memory surface only (pre-commit friendly)
+memora validate --scope memory
+
+# Repo-docs surface only
+memora validate --scope repo-docs
+
+# Full surface with strict mode
+memora validate --scope all --strict
+
 memora validate --profile extended
 memora validate --profile governance
 memora validate --format json
@@ -267,15 +292,22 @@ memora validate --watch
 ### Pre-commit check
 
 ```bash
-memora validate
+# Pre-commit runs only memory scope — docs drift never blocks a memory commit
+memora validate --scope memory
 ```
 
 ### CI-style check
 
 ```bash
-memora validate --strict --format json
-memora validate --profile extended
-memora validate --profile governance --format json
+# Blocking: memory surface
+memora validate --scope memory --profile core --format json
+
+# Blocking: repo-docs surface
+memora validate --scope repo-docs --profile core --format json
+
+# Advisory: full surface, extended profile
+memora validate --scope all --profile extended --format json
+memora validate --scope all --profile governance --format json
 memora doctor --format json
 ```
 

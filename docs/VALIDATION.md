@@ -64,15 +64,43 @@ memora validate
 
 This now validates memory-bank contracts across schema, integrity, and operational hygiene.
 
+### Validation scopes
+
+`memora validate` supports a `--scope` flag that isolates which surface to check:
+
+| Scope | Surface | Typical use |
+|-------|---------|-------------|
+| `memory` | `memory-bank/**` — schema, frontmatter, session limits, privacy, internal links, ADR/INDEX | Pre-commit, focused authoring |
+| `repo-docs` | `README.md` and `docs/**` — internal link integrity | Documentation review, CI |
+| `all` | Both surfaces combined | Default; full validation |
+
+The scope separation means that a broken link in `README.md` never blocks a valid memory-bank commit, and vice versa.
+
 ### Supported modes
 
-#### Default validation
+#### Default validation (all scopes)
 
 ```bash
 memora validate
 ```
 
 Use this for normal local authoring.
+
+#### Memory scope only
+
+```bash
+memora validate --scope memory
+```
+
+Use this in pre-commit hooks and focused memory authoring.
+
+#### Repo-docs scope only
+
+```bash
+memora validate --scope repo-docs
+```
+
+Use this to audit `README.md` and `docs/` links independently.
 
 #### Strict validation
 
@@ -94,11 +122,11 @@ Use profiles when you need different enforcement levels for local authoring, tea
 
 **Validation Profiles Comparison:**
 
-| Profile | Use case | Scope | Strictness |
-|---------|----------|-------|-----------|
-| **core** | Daily authoring & local work | Base schema, essential integrity | Warnings only |
-| **extended** | Team review, quality gates | Schema + cross-file checks + drift | Warnings + recommended fields |
-| **governance** | Policy compliance, strict CI | All of extended + governance rules | All warnings as errors |
+| Profile | Use case | Strictness |
+|---------|----------|-----------|
+| **core** | Daily authoring & local work | Warnings only |
+| **extended** | Team review, quality gates | Warnings + recommended fields |
+| **governance** | Policy compliance, strict CI | All warnings as errors |
 
 #### JSON output
 
@@ -174,14 +202,28 @@ Run `memora doctor` right after `memora init`, after package install, and after 
 
 ## 🚫 3. Pre-commit validation
 
-Memora includes a repository-level pre-commit hook that runs validation when `memory-bank/*.md` files are staged.
+Memora includes a repository-level pre-commit hook that runs `memora validate --scope memory` when `memory-bank/*.md` files are staged.
+
+### Why `--scope memory` in pre-commit
+
+The hook deliberately validates only the memory surface, not `README.md` or `docs/`:
+
+- Documentation drift in `README.md` should never block a valid memory-bank commit.
+- Full repo-docs validation runs separately in CI (`--scope repo-docs`).
+- This separation gives fast, focused local feedback without false positives.
+
+If you want to check repo-docs locally, run:
+
+```bash
+memora validate --scope repo-docs
+```
 
 ### Why pre-commit matters
 
 It gives teams a strong local quality gate:
 
-- obvious issues are caught before commit,
-- memory-bank hygiene becomes part of the normal developer loop,
+- memory-bank issues are caught before commit,
+- hygiene becomes part of the normal developer loop,
 - validation becomes habitual instead of occasional.
 
 ### How to use the pre-commit hook
@@ -192,23 +234,28 @@ Keep the hook enabled and treat it as part of normal engineering hygiene.
 
 ## 🤖 4. GitHub Actions CI
 
-Memora also includes CI validation for repository-level quality control.
+Memora includes CI validation for repository-level quality control.
 
 ### Included jobs
 
-- **Validate — Core**
-- **Validate — Extended**
-- **Doctor**
-- **Smoke Install**
-- **Markdownlint**
+| Job | Scope | Profile | Blocks merge |
+|-----|-------|---------|:---:|
+| **Validate — memory scope** | `memory` | `core` | ✅ |
+| **Validate — repo-docs scope** | `repo-docs` | `core` | ✅ |
+| **Validate — all scopes extended** | `all` | `extended` + `governance` report | ❌ advisory |
+| **Doctor** | — | — | ✅ |
+| **Smoke Install** | — | — | ✅ |
+| **Markdownlint** | — | — | ✅ |
+
+The two blocking validate jobs run independently so CI tells you exactly which surface is broken: memory or repo-docs. The advisory job runs after both blocking jobs pass and uploads a governance-profile JSON report as a CI artifact.
 
 ### Why CI validation matters
 
 This gives you:
 
+- clear signal: which surface failed (memory vs. repo-docs),
 - team-wide validation consistency,
 - pull-request visibility,
-- cleaner repository history,
 - repeatable checks across environments.
 
 CI is especially useful when memory files are reviewed collaboratively.
@@ -226,6 +273,43 @@ The repository includes a `schemas/` directory with JSON Schemas for card types 
 These schemas serve as reference artifacts for the memory model and support documentation clarity around card structure.
 
 They are especially useful when you want to understand the intended shape of different memory artifacts.
+
+---
+
+## 🏭 Source-repo policy: intentional placeholders
+
+The Memora source repository ships `memory-bank/` files that are intentionally template-like. These files are the scaffold that users copy into their own projects — they should contain placeholders until the user fills them in with `/memory-bootstrap`.
+
+To prevent the source repo's own `validate` and `doctor` from flagging those placeholders as errors, Memora supports a **source-repo policy** via `package.json`:
+
+```json
+{
+  "memora": {
+    "repoRole": "scaffold-source",
+    "sourcePolicyAllowlist": [
+      "memory-bank/PROJECT.md",
+      "memory-bank/ARCHITECTURE.md",
+      "memory-bank/CONSTITUTION.md",
+      "memory-bank/CONVENTIONS.md",
+      "memory-bank/TESTING.md"
+    ]
+  }
+}
+```
+
+### How it works
+
+- If `memora.repoRole === "scaffold-source"` is set in `package.json`, `validate` and `doctor` skip placeholder checks for files in `sourcePolicyAllowlist`.
+- Files **not** in the allowlist are still fully validated.
+- `package.json` is not copied to target projects by `memora init` (it is not listed in `scaffold.manifest.json`), so **target projects never inherit source-repo policy**.
+
+### Fresh scaffold behaviour
+
+A project created with `memora init` has no `package.json` with `memora.repoRole`. This means:
+
+- Placeholder checks run normally.
+- `extended` and `governance` profiles flag unfilled canonical files.
+- This is intentional: Memora reminds you to fill in the memory-bank.
 
 ---
 

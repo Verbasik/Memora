@@ -210,8 +210,14 @@ This creates a scaffolded `memory-bank/` directory with all core files.
 #### 2️⃣ Validate your memory bank
 
 ```bash
-# Basic validation
+# Basic validation (all surfaces)
 memora validate
+
+# Memory surface only — fast, pre-commit friendly
+memora validate --scope memory
+
+# Repo-docs surface only — README and docs/ link integrity
+memora validate --scope repo-docs
 
 # Strict mode (recommended for teams)
 memora validate --strict
