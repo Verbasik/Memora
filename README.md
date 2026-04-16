@@ -333,14 +333,15 @@ Memora is **actively developed**. The roadmap builds on our solid foundation:
 
 ### Recently Shipped
 
+- ✅ **Transcript store (Phase 2, Step 1)** — `lib/runtime/transcript/store.js`: JSONL-backed `TranscriptStore`, atomic writes (FR-006), rich session/message schema (FR-009), substring recall search (FR-010), 44 tests
 - ✅ **Runtime security layer (Phase 1)** — `lib/runtime/`: security screening, frozen snapshots, fenced recall blocks (134 tests)
 - ✅ **Compatibility matrix** — Full feature matrix across all four toolchains ([docs/COMPATIBILITY.md](./docs/COMPATIBILITY.md))
 - ✅ **Guardrail baseline** — Canonical secret-protection baseline for all providers ([docs/SECURITY.md](./docs/SECURITY.md))
 
 ### Current Focus (Q2 2026)
 
-- 🗄️ **Transcript store (Phase 2)** — SQLite + FTS5 session recall, secure atomic writes, integration with memory-restore
-- 🔍 **Rich schema-driven validation** — Stricter, faster validation rules
+- 🔍 **Recall pipeline (Phase 2, Step 2)** — `lib/runtime/transcript/recall.js`: search → format → fenced recall block (FR-011)
+- 🔗 **Runtime API wiring (Phase 2, Step 3)** — `TranscriptStore` into `lib/runtime/index.js` public API
 - 🛠️ **Install diagnostics** — Better `memora doctor` output
 - 🤖 **Memory automation** — Smart consolidation and cleanup helpers
 
