@@ -288,6 +288,130 @@ function runFrontmatterEdgeCasesScenario() {
   }
 }
 
+// ── Step 10: scope + source-policy model ──────────────────────────────────────
+
+function writeBrokenReadme(projectRoot) {
+  fs.writeFileSync(
+    path.join(projectRoot, 'README.md'),
+    '# Test\n\n[broken link](./docs/nonexistent-file.md)\n'
+  );
+}
+
+function runScopeMemoryIgnoresRepodocsBrokenLinks() {
+  // --scope memory must NOT report errors caused by a broken link in README.md
+  const projectRoot = makeProjectDir('memora-scope-memory-');
+  initGitRepo(projectRoot);
+  run(node, ['bin/memora.js', 'init', projectRoot], { cwd: repoRoot });
+  writeBrokenReadme(projectRoot);
+
+  const report = runValidateJson(projectRoot, ['--scope', 'memory', '--profile', 'core']);
+  assert.equal(
+    report.scope, 'memory',
+    'Result must carry scope: memory'
+  );
+  assert.equal(
+    report.errors.length, 0,
+    `--scope memory must ignore README broken links. Errors: ${JSON.stringify(report.errors, null, 2)}`
+  );
+}
+
+function runScopeRepoDocsCatchesBrokenLinks() {
+  // --scope repo-docs must report the broken link in README.md
+  const projectRoot = makeProjectDir('memora-scope-repodocs-');
+  initGitRepo(projectRoot);
+  run(node, ['bin/memora.js', 'init', projectRoot], { cwd: repoRoot });
+  writeBrokenReadme(projectRoot);
+
+  const report = runValidateJson(projectRoot, ['--scope', 'repo-docs', '--profile', 'core'], 1);
+  assert.equal(report.scope, 'repo-docs', 'Result must carry scope: repo-docs');
+  assert.ok(
+    report.errors.some((e) => e.file === 'README.md' && e.message.includes('nonexistent-file.md')),
+    `--scope repo-docs must report broken link in README.md. Errors: ${JSON.stringify(report.errors, null, 2)}`
+  );
+  assert.ok(
+    report.errors.every((e) => !e.file.startsWith('memory-bank/')),
+    '--scope repo-docs must not report memory-bank errors'
+  );
+}
+
+function runScopeAllCombinesBoth() {
+  // --scope all must surface broken README link AND memory-bank errors together
+  const projectRoot = makeProjectDir('memora-scope-all-');
+  initGitRepo(projectRoot);
+  run(node, ['bin/memora.js', 'init', projectRoot], { cwd: repoRoot });
+  writeBrokenReadme(projectRoot);
+
+  // Inject a broken internal link into a memory-bank file as well
+  const projectMd = path.join(projectRoot, 'memory-bank/PROJECT.md');
+  const original = fs.readFileSync(projectMd, 'utf8');
+  fs.writeFileSync(projectMd, original + '\n[bad mb link](./MISSING_MB_FILE.md)\n');
+
+  const report = runValidateJson(projectRoot, ['--scope', 'all', '--profile', 'core'], 1);
+  assert.equal(report.scope, 'all', 'Result must carry scope: all');
+  assert.ok(
+    report.errors.some((e) => e.file === 'README.md'),
+    '--scope all must include README.md error'
+  );
+  assert.ok(
+    report.errors.some((e) => e.file.startsWith('memory-bank/')),
+    '--scope all must include memory-bank error'
+  );
+}
+
+function runSourcePolicyAllowsPlaceholdersInScaffoldSource() {
+  // scaffold-source repo: governance profile must NOT flag placeholders
+  // in files covered by sourcePolicyAllowlist, but MUST still flag them
+  // in files that are NOT in the allowlist.
+  const projectRoot = makeProjectDir('memora-source-policy-');
+  initGitRepo(projectRoot);
+  run(node, ['bin/memora.js', 'init', projectRoot], { cwd: repoRoot });
+
+  // Mark this project as scaffold-source with allowlist for PROJECT.md only
+  const pkg = { memora: { repoRole: 'scaffold-source', sourcePolicyAllowlist: ['memory-bank/PROJECT.md'] } };
+  fs.writeFileSync(path.join(projectRoot, 'package.json'), JSON.stringify(pkg, null, 2));
+
+  // Use runResult — exit code can be non-zero because non-allowlisted files
+  // still have placeholder errors under governance profile.
+  const result = runResult(
+    node,
+    ['bin/memora.js', 'validate', projectRoot, '--profile', 'governance', '--scope', 'memory', '--format', 'json'],
+    { cwd: repoRoot }
+  );
+  const report = JSON.parse(result.stdout);
+
+  // Allowlisted file must have NO placeholder errors
+  const allowlistedErrors = report.errors.filter(
+    (e) => e.file === 'memory-bank/PROJECT.md' && e.message.includes('template placeholder')
+  );
+  assert.equal(
+    allowlistedErrors.length, 0,
+    `scaffold-source policy must suppress placeholder errors for allowlisted files. Errors: ${JSON.stringify(report.errors, null, 2)}`
+  );
+
+  // Non-allowlisted file (ARCHITECTURE.md) must STILL be flagged
+  const nonAllowlistedErrors = report.errors.filter(
+    (e) => e.file === 'memory-bank/ARCHITECTURE.md' && e.message.includes('template placeholder')
+  );
+  assert.ok(
+    nonAllowlistedErrors.length > 0,
+    'Files NOT in allowlist must still be flagged for placeholders under governance'
+  );
+}
+
+function runFreshScaffoldStillCatchesPlaceholders() {
+  // target project (no memora.repoRole): governance must still flag placeholders
+  const projectRoot = makeProjectDir('memora-target-policy-');
+  initGitRepo(projectRoot);
+  run(node, ['bin/memora.js', 'init', projectRoot], { cwd: repoRoot });
+
+  // No package.json → no source policy → governance should flag placeholders
+  const report = runValidateJson(projectRoot, ['--profile', 'governance', '--scope', 'memory'], 1);
+  assert.ok(
+    report.errors.some((e) => e.message.includes('template placeholder')),
+    `Target project without source policy must still flag placeholders under governance. Errors: ${JSON.stringify(report.errors, null, 2)}`
+  );
+}
+
 function main() {
   runInitScenario({ includeAssets: false, includeServices: false });
   runInitScenario({ includeAssets: true, includeServices: true });
@@ -295,6 +419,11 @@ function main() {
   runSchemaContractScenario();
   runMissingLocalSessionScenario();
   runFrontmatterEdgeCasesScenario();
+  runScopeMemoryIgnoresRepodocsBrokenLinks();
+  runScopeRepoDocsCatchesBrokenLinks();
+  runScopeAllCombinesBoth();
+  runSourcePolicyAllowsPlaceholdersInScaffoldSource();
+  runFreshScaffoldStillCatchesPlaceholders();
   process.stdout.write('Smoke tests passed.\n');
 }
 
