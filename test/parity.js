@@ -217,6 +217,122 @@ function checkHookPathResolution() {
   );
 }
 
+// ── Check 6: workflow body drift ─────────────────────────────────────────────
+//
+// For each core workflow, extracts the body (content after the frontmatter
+// closing ---) from every provider's file and compares them for equivalence.
+// Provider-specific metadata (frontmatter fields like name, description, tools,
+// model) is excluded from comparison. Only the semantic instruction body is
+// checked.
+//
+// Skips files listed in baseline.documentation_surface.documented_exceptions
+// that have area === "workflows" (e.g. memory-explorer agent vs skill).
+//
+// Related requirements: FR-003, FR-014
+
+function extractBody(content) {
+  // Strip the frontmatter block: everything between the first and second '---'
+  const lines = content.split('\n');
+  let inFrontmatter = false;
+  let frontmatterClosed = false;
+  const bodyLines = [];
+
+  for (const line of lines) {
+    if (!inFrontmatter && !frontmatterClosed && line.trim() === '---') {
+      inFrontmatter = true;
+      continue;
+    }
+    if (inFrontmatter && line.trim() === '---') {
+      inFrontmatter = false;
+      frontmatterClosed = true;
+      continue;
+    }
+    if (frontmatterClosed) {
+      bodyLines.push(line);
+    }
+  }
+
+  // Normalize: trim trailing whitespace from each line, strip leading/trailing blank lines
+  return bodyLines
+    .map(l => l.trimEnd())
+    .join('\n')
+    .trim();
+}
+
+function checkWorkflowBodyDrift() {
+  const surfaces = baseline.core_workflows.provider_surfaces;
+  const exceptions = new Set(
+    (baseline.documentation_surface.documented_exceptions || [])
+      .filter(e => e.area === 'workflows')
+      .map(e => e.id)
+  );
+
+  // Build a list of workflow→provider→body mappings
+  const workflowBodies = {};
+
+  for (const [provider, surface] of Object.entries(surfaces)) {
+    for (const [workflow, filePath] of Object.entries(surface.files)) {
+      if (!exists(filePath)) continue; // already caught by checkWorkflowFiles
+
+      const content = readFile(filePath);
+      const body = extractBody(content);
+
+      if (!workflowBodies[workflow]) workflowBodies[workflow] = {};
+      workflowBodies[workflow][provider] = { body, filePath };
+    }
+  }
+
+  let failures = 0;
+
+  for (const [workflow, providerMap] of Object.entries(workflowBodies)) {
+    const providers = Object.keys(providerMap);
+    if (providers.length < 2) continue;
+
+    // Use the first provider as reference
+    const [refProvider, ...restProviders] = providers;
+    const refBody = providerMap[refProvider].body;
+
+    for (const provider of restProviders) {
+      const { body, filePath } = providerMap[provider];
+      if (body === refBody) continue;
+
+      // Check if this workflow+provider pair is a documented exception
+      const isException = [...exceptions].some(id => {
+        const exc = baseline.documentation_surface.documented_exceptions.find(e => e.id === id);
+        return exc && exc.provider === provider && exc.area === 'workflows';
+      });
+
+      if (isException) continue;
+
+      try {
+        assert.equal(
+          body, refBody,
+          `[check-workflow-body-drift] workflow=${workflow} ` +
+          `provider=${provider} (${filePath}) differs from ` +
+          `provider=${refProvider} (${providerMap[refProvider].filePath})`
+        );
+      } catch (err) {
+        // Show a compact diff hint
+        const refLines = refBody.split('\n');
+        const cmpLines = body.split('\n');
+        const firstDiff = refLines.findIndex((l, i) => l !== cmpLines[i]);
+        const hint = firstDiff >= 0
+          ? `\n  first diff at body line ${firstDiff + 1}:\n` +
+            `    ref:  ${JSON.stringify(refLines[firstDiff])}\n` +
+            `    got:  ${JSON.stringify(cmpLines[firstDiff] ?? '<missing>')}`
+          : '\n  (line counts differ)';
+        process.stderr.write(err.message + hint + '\n');
+        failures++;
+      }
+    }
+  }
+
+  assert.equal(
+    failures, 0,
+    `check-workflow-body-drift: ${failures} workflow body drift(s) detected`
+  );
+}
+
 // ── Runner ────────────────────────────────────────────────────────────────────
 
 function main() {
@@ -225,6 +341,7 @@ function main() {
   checkEntryContract();
   checkGuardrailFiles();
   checkHookPathResolution();
+  checkWorkflowBodyDrift();
   process.stdout.write('Parity checks passed.\n');
 }
 
