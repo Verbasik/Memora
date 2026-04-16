@@ -13,7 +13,7 @@
  * Advisory: выводит additionalContext агенту, НЕ запускает рефлексию автоматически.
  */
 
-import { execSync } from "child_process";
+import { execSync, execFileSync } from "child_process";
 
 export default {
   name: "reflect-trigger",
@@ -33,11 +33,15 @@ export default {
     }
 
     try {
-      const output = execSync("bash memory-bank/scripts/check-reflect-trigger.sh", {
-        cwd: ctx.cwd,
-        encoding: "utf-8",
-        timeout: 5000,
-      });
+      const repoRoot = execFileSync(
+        "git", ["rev-parse", "--show-toplevel"],
+        { cwd: ctx.cwd, encoding: "utf-8" }
+      ).trim();
+
+      const output = execSync(
+        `bash "${repoRoot}/memory-bank/scripts/check-reflect-trigger.sh"`,
+        { encoding: "utf-8", timeout: 5000 }
+      );
 
       if (output.trim()) {
         return { additionalContext: output.trim() };

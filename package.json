@@ -25,6 +25,7 @@
     ".github",
     ".markdownlint.jsonc",
     "scaffold.manifest.json",
+    "parity-baseline.json",
     "assets",
     "services",
     "docs"
@@ -32,7 +33,7 @@
   "scripts": {
     "postinstall": "node bin/postinstall.js",
     "prepare": "git config core.hooksPath .githooks 2>/dev/null || true",
-    "test": "node test/smoke.js"
+    "test": "node test/smoke.js && node test/parity.js"
   },
   "keywords": [
     "memora",

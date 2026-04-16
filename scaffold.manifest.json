@@ -17,7 +17,8 @@
     { "source": ".githooks", "target": ".githooks" },
     { "source": ".github", "target": ".github" },
     { "source": ".markdownlint.jsonc", "target": ".markdownlint.jsonc" },
-    { "source": "scaffold.manifest.json", "target": "scaffold.manifest.json" }
+    { "source": "scaffold.manifest.json", "target": "scaffold.manifest.json" },
+    { "source": "parity-baseline.json", "target": "parity-baseline.json" }
   ],
   "optionalEntries": {
     "assets": [
