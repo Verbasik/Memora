@@ -3,6 +3,8 @@
 *.key
 *.pem
 *.p12
+*credentials*
+*secret*
 **/secrets/
 **/credentials/
 
