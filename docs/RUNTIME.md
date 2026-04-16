@@ -25,6 +25,8 @@
 - [Security patterns reference](#-security-patterns-reference)
 - [Usage examples](#-usage-examples)
 - [Relationship to memory-bank](#-relationship-to-memory-bank)
+- [Retention and data lifecycle](#-retention-and-data-lifecycle)
+- [Degraded modes](#-degraded-modes)
 - [Roadmap](#-roadmap)
 - [Navigation](#-navigation)
 
@@ -765,6 +767,101 @@ The runtime layer and the `memory-bank/` are intentionally separate:
 | `lib/runtime/` | Session + security runtime | `lib/runtime/` modules | Does **not** write to `memory-bank/` |
 
 The runtime layer is a **read-and-screen gate**, not a replacement for the knowledge model. It enforces security invariants that complement the declarative rules in `SECURITY.md` and `.claude/rules/security.md`.
+
+---
+
+## 🗂️ Retention and data lifecycle
+
+### What persists and where
+
+| Data type | Location | Gitignored | Auto-expires |
+|---|---|---|---|
+| Session snapshots | In-memory only | N/A | Cleared on `resetSession()` or process exit |
+| Transcript sessions | `memory-bank/.local/transcript-sessions.jsonl` | Yes | **No — manual or GC** |
+| Transcript messages | `memory-bank/.local/transcript-messages.jsonl` | Yes | **No — manual or GC** |
+| Provider registry state | In-memory only | N/A | Cleared on `resetProviderRegistry()` or process exit |
+
+### Transcript store retention policy
+
+The transcript store has **no automatic TTL**. Records accumulate indefinitely until one of the following:
+
+1. **`memory-gc`** — the advisory garbage-collection workflow. Removes sessions older than a configured window. Run it as a post-session hook or on a regular schedule.
+2. **Manual deletion** — delete `transcript-sessions.jsonl` and `transcript-messages.jsonl` to wipe all history.
+3. **Custom dataDir** — point a `TranscriptStore` at a temporary directory that is cleaned externally.
+
+**Recommended defaults:**
+
+| Use case | Recommended action |
+|---|---|
+| Interactive development | Run `memory-gc` after every significant session |
+| CI / ephemeral environments | Use a temp `dataDir`; clean up after the run |
+| Long-lived team projects | Keep history; set retention window to 30–90 days in `memory-gc` config |
+| Security-sensitive contexts | Wipe after every session; never let transcript files accumulate |
+
+### Performance considerations
+
+`TranscriptStore.search()` does a full linear scan of `transcript-messages.jsonl`. As the file grows:
+
+- At ~1 000 messages (typical week): imperceptible
+- At ~50 000 messages (typical year without GC): noticeable (~1–2 s)
+- At ~500 000+ messages: recommend switching to a SQLite backend (FR-008, backlog)
+
+Run `memory-gc` before transcript files grow beyond 10 MB.
+
+### Session isolation across toolchains
+
+Each `TranscriptStore` instance reads from a single `dataDir`. If multiple toolchains (`claude`, `codex`, `qwen`, `opencode`) write to the same `dataDir`, their session records coexist in the same JSONL files. Use the `source` filter on `search()` and `listSessions()` to scope results to a specific toolchain.
+
+---
+
+## ⚠️ Degraded modes
+
+The runtime layer is designed to degrade gracefully — never to hard-fail the agent flow — except for explicit security blocks.
+
+### Security layer (Phase 1)
+
+| Situation | Behaviour |
+|---|---|
+| Memory write threat detected | `checkMemoryWrite()` returns `{ allowed: false, patternId, reason }`. **Caller must not write.** This is a hard block, not a degraded mode. |
+| Context file threat detected | `loadContextFile()` returns safe `[BLOCKED: ...]` placeholder. Agent sees explicit notice. File is not injected. |
+| Context file missing or unreadable | `loadContextFile()` returns empty content + `diagnostics` entry. Does **not** throw. |
+| Snapshot source file missing | `createSnapshot()` records `{ error }` in that file's entry. Other sources are loaded normally. `snapshot.errorCount > 0`. |
+
+### Transcript layer (Phase 2)
+
+| Situation | Behaviour |
+|---|---|
+| Transcript store unavailable / I/O error | `recallTranscripts()` catches the error, sets `found: false`, returns `block: ''` with `diagnostics` description. Does **not** throw. |
+| No matching sessions | `recallTranscripts()` returns `{ found: false, block: '' }` with message `'No sessions found matching "…".'` |
+| Empty query (`''` or whitespace) | `recallTranscripts()` returns `{ found: false, block: '' }` immediately. No store access. |
+| LLM summarization unavailable | Structured text excerpts are returned instead (explicit degraded mode per FR-011). Quality is lower but the interface is identical. |
+| SQLite backend unavailable | Not applicable — JSONL is the current baseline. SQLite is backlog (FR-008). |
+
+### Provider layer (Phase 3)
+
+| Situation | Behaviour |
+|---|---|
+| `provider.isAvailable()` returns `false` | Provider is skipped by `initializeAll()`; listed in `result.skipped`. |
+| `provider.initialize()` throws | Error recorded in `registry.diagnostics`; provider listed in `result.failed`. Other providers continue. |
+| Any lifecycle hook throws | Error recorded in `registry.diagnostics` with format `[provider-name] hookName non-fatal: <message>`. Fan-out continues to next provider. |
+| All providers fail | `prefetchAll()` returns `''`; `onPreCompress()` returns `''`; other fan-outs complete silently. No throws. |
+| Unknown tool call | `registry.handleToolCall()` returns `{ error: 'No provider handles tool …' }` as JSON string. |
+
+### Reading degraded mode signals
+
+```js
+// After any registry operation
+const diag = runtime.getProviderRegistry().diagnostics;
+// ['[local-transcript] onTurnStart non-fatal: TypeError: ...']
+
+// After recallTranscripts
+const { found, block, diagnostics } = runtime.recallTranscripts('query');
+if (!found) console.warn(diagnostics);
+
+// After initSession
+const { snapshot, hasErrors, diagnostics } = runtime.initSession(sources);
+if (hasErrors) console.warn(diagnostics);
+```
 
 ---
 
