@@ -412,6 +412,56 @@ function runFreshScaffoldStillCatchesPlaceholders() {
   );
 }
 
+// ── Step 11: dedupe link errors ────────────────────────────────────────────────
+
+function runDedupeLinkErrorsScenario() {
+  // validate: same broken link repeated N times in one file → exactly 1 error entry
+  {
+    const projectRoot = makeProjectDir('memora-dedupe-validate-');
+    initGitRepo(projectRoot);
+    run(node, ['bin/memora.js', 'init', projectRoot], { cwd: repoRoot });
+
+    // Append the same broken link 4 times to an existing memory-bank file
+    const projectMd = path.join(projectRoot, 'memory-bank/PROJECT.md');
+    const repeated = '\n' + Array(4).fill('[dup link](./DOES_NOT_EXIST.md)').join('\n') + '\n';
+    fs.appendFileSync(projectMd, repeated);
+
+    const report = runValidateJson(projectRoot, ['--scope', 'memory', '--profile', 'core'], 1);
+    const dupErrors = report.errors.filter(
+      (e) => e.file === 'memory-bank/PROJECT.md' && e.message.includes('DOES_NOT_EXIST.md')
+    );
+    assert.equal(
+      dupErrors.length, 1,
+      `validate must deduplicate repeated broken-link errors: expected 1, got ${dupErrors.length}. Errors: ${JSON.stringify(dupErrors, null, 2)}`
+    );
+  }
+
+  // doctor: same broken link repeated N times in one file → exactly 1 error entry
+  {
+    const projectRoot = makeProjectDir('memora-dedupe-doctor-');
+    initGitRepo(projectRoot);
+    run(node, ['bin/memora.js', 'init', projectRoot], { cwd: repoRoot });
+
+    // Write README.md with the same broken link 4 times
+    const repeated = Array(4).fill('[dup](./GHOST_FILE.md)').join('\n');
+    fs.writeFileSync(path.join(projectRoot, 'README.md'), `# Test\n\n${repeated}\n`);
+
+    const result = runResult(
+      node,
+      ['bin/memora.js', 'doctor', projectRoot, '--format', 'json'],
+      { cwd: repoRoot }
+    );
+    const report = JSON.parse(result.stdout);
+    const dupErrors = report.errors.filter(
+      (e) => e.check === 'links' && e.message.includes('GHOST_FILE.md')
+    );
+    assert.equal(
+      dupErrors.length, 1,
+      `doctor must deduplicate repeated broken-link errors: expected 1, got ${dupErrors.length}. Errors: ${JSON.stringify(dupErrors, null, 2)}`
+    );
+  }
+}
+
 function main() {
   runInitScenario({ includeAssets: false, includeServices: false });
   runInitScenario({ includeAssets: true, includeServices: true });
@@ -424,6 +474,7 @@ function main() {
   runScopeAllCombinesBoth();
   runSourcePolicyAllowsPlaceholdersInScaffoldSource();
   runFreshScaffoldStillCatchesPlaceholders();
+  runDedupeLinkErrorsScenario();
   process.stdout.write('Smoke tests passed.\n');
 }
 
