@@ -18,6 +18,9 @@
 - [Module: fenced-context](#-module-fenced-context)
 - [Module: transcript/store (Phase 2)](#️-module-transcriptstore-phase-2)
 - [Module: transcript/recall (Phase 2)](#-module-transcriptrecall-phase-2)
+- [Module: provider (Phase 3)](#-module-provider-phase-3)
+- [Module: provider-registry (Phase 3)](#-module-provider-registry-phase-3)
+- [Module: providers/local (Phase 3)](#-module-providerslocal-phase-3)
 - [Public API (lib/runtime/index.js)](#-public-api-libruntimeindexjs)
 - [Security patterns reference](#-security-patterns-reference)
 - [Usage examples](#-usage-examples)
@@ -45,16 +48,20 @@ The runtime layer is **additive**. It does not replace or rewrite the `memory-ba
 
 ```text
 lib/runtime/
-├── index.js              ← Public high-level API
-├── security-scanner.js   ← Prompt injection + exfiltration screening
-├── snapshot.js           ← Frozen session snapshot semantics
-├── fenced-context.js     ← Fenced recall block builder + sanitizer
+├── index.js               ← Public high-level API (Phases 1–3)
+├── security-scanner.js    ← Prompt injection + exfiltration screening (Phase 1)
+├── snapshot.js            ← Frozen session snapshot semantics (Phase 1)
+├── fenced-context.js      ← Fenced recall block builder + sanitizer (Phase 1)
+├── provider.js            ← MemoryProvider base class / contract (Phase 3)
+├── provider-registry.js   ← ProviderRegistry orchestrator + failure isolation (Phase 3)
+├── providers/
+│   └── local.js           ← LocalMemoryProvider built-in (Phase 3)
 └── transcript/
-    ├── store.js          ← JSONL-backed TranscriptStore (Phase 2, Step 1)
-    └── recall.js         ← Recall pipeline: search → format → fenced block (Phase 2, Step 2)
+    ├── store.js           ← JSONL-backed TranscriptStore (Phase 2, Step 1)
+    └── recall.js          ← Recall pipeline: search → format → fenced block (Phase 2, Step 2)
 ```
 
-Each module is independently usable. The `index.js` re-exports all three Phase 1 sub-modules and provides a convenience API for the most common agent-facing operations.
+Each module is independently usable. `index.js` re-exports all sub-modules and provides a convenience API covering all three phases.
 
 **No external dependencies.** The runtime layer uses only Node.js built-ins (`fs`, `crypto`, `path`). It requires Node.js >= 16 (consistent with the rest of Memora).
 
@@ -350,9 +357,176 @@ if (result.found) {
 
 ---
 
+## 📋 Module: provider (Phase 3)
+
+**File:** `lib/runtime/provider.js`
+
+Defines the `MemoryProvider` base class — the contract every optional memory provider must implement. All methods have **no-op / safe-default implementations** so subclasses only override what they actually need.
+
+### Lifecycle overview
+
+```
+(1) Registration  → ProviderRegistry.addProvider(provider)
+(2) Startup       → provider.isAvailable() checked; if false, skipped
+                    provider.initialize(sessionId, opts)
+(3) Per-turn      → provider.onTurnStart(turnNumber, message, opts)
+                    provider.prefetch(query, opts)        → context string
+                    provider.syncTurn(user, assistant, opts)
+                    provider.queuePrefetch(query, opts)   [background]
+(4) Hooks         → provider.onPreCompress(messages)     → string
+                    provider.onMemoryWrite(action, target, content)
+                    provider.onDelegation(task, result, opts)
+(5) Session end   → provider.onSessionEnd(messages)
+(6) Shutdown      → provider.shutdown()
+```
+
+### Method reference
+
+| Method | Default | Purpose |
+|---|---|---|
+| `get name()` | `'unnamed'` | Unique provider id; subclasses **MUST** override |
+| `isAvailable()` | `true` | Return `false` to skip initialization (no network calls allowed) |
+| `initialize(sessionId, opts)` | no-op | Called once at session start |
+| `shutdown()` | no-op | Called in reverse registration order at teardown |
+| `systemPromptBlock()` | `''` | Static text to include in system prompt |
+| `prefetch(query, opts)` | `''` | Recall relevant context before each turn |
+| `queuePrefetch(query, opts)` | no-op | Background prefetch for next turn |
+| `syncTurn(user, assistant, opts)` | no-op | Persist completed turn to backend |
+| `getToolSchemas()` | `[]` | Tool schemas to expose to the model |
+| `handleToolCall(name, args, opts)` | throws | Dispatch a tool call; override if `getToolSchemas()` is non-empty |
+| `onTurnStart(n, message, opts)` | no-op | Turn-start tick |
+| `onSessionEnd(messages)` | no-op | Session-end hook |
+| `onPreCompress(messages)` | `''` | Pre-compression hook; return text for compressor |
+| `onMemoryWrite(action, target, content)` | no-op | Mirror canonical memory writes |
+| `onDelegation(task, result, opts)` | no-op | Subagent completion observation |
+
+### Extending
+
+```js
+const { MemoryProvider } = require('./lib/runtime/provider');
+
+class MyProvider extends MemoryProvider {
+  get name() { return 'my-backend'; }
+
+  initialize(sessionId, opts) {
+    this._client = new MyBackendClient(opts.apiKey);
+  }
+
+  prefetch(query, opts) {
+    return this._client.search(query);
+  }
+
+  syncTurn(user, assistant) {
+    this._client.store({ user, assistant });
+  }
+}
+```
+
+---
+
+## 🔀 Module: provider-registry (Phase 3)
+
+**File:** `lib/runtime/provider-registry.js`
+
+`ProviderRegistry` orchestrates multiple `MemoryProvider` instances with **full failure isolation**: errors in any single provider are caught, logged to `registry.diagnostics`, and never propagate to block other providers.
+
+### Registration
+
+```js
+const { ProviderRegistry }    = require('./lib/runtime/provider-registry');
+const { LocalMemoryProvider } = require('./lib/runtime/providers/local');
+
+const registry = new ProviderRegistry();
+registry.addProvider(new LocalMemoryProvider());
+// returns true; returns false on duplicate name
+```
+
+- **First-registered wins** on tool name collision — duplicates are noted in `diagnostics`
+- Providers with `isAvailable() === false` are registered but skipped by `initializeAll()`
+- `providers` property returns a snapshot copy of the registration list
+
+### Bulk lifecycle
+
+```js
+const { initialized, skipped, failed } = registry.initializeAll('sess-001', {
+  projectDir: process.cwd(),
+  source: 'claude',
+});
+// skipped: providers where isAvailable() returned false
+// failed:  providers where initialize() threw
+
+const { shutdown, failed } = registry.shutdownAll();
+// iterates in reverse registration order (clean teardown)
+```
+
+### Fan-out operations
+
+All fan-out methods catch per-provider exceptions and append them to `registry.diagnostics`:
+
+| Method | Returns | Fan-out strategy |
+|---|---|---|
+| `buildSystemPrompt()` | `string` | Joins `systemPromptBlock()` results with `"\n\n"` |
+| `prefetchAll(query, opts)` | `string` | Joins `prefetch()` results with `"\n\n"` |
+| `queuePrefetchAll(query, opts)` | `void` | Fire-and-forget background prefetch |
+| `syncAll(user, assistant, opts)` | `void` | Calls `syncTurn()` on all providers |
+| `onTurnStart(n, msg, opts)` | `void` | Turn-start hook |
+| `onSessionEnd(messages)` | `void` | Session-end hook |
+| `onPreCompress(messages)` | `string` | Joins pre-compression contributions |
+| `onMemoryWrite(action, target, content)` | `void` | Memory write hook |
+| `onDelegation(task, result, opts)` | `void` | Subagent completion hook |
+
+### Tool routing
+
+```js
+registry.getToolSchemas()                          // aggregated, deduplicated
+registry.hasTool('recall_transcripts')             // true if any provider owns this tool
+registry.handleToolCall('recall_transcripts', args) // routes to owning provider; returns JSON string
+// On error or unknown tool: returns JSON { error: '...' }
+```
+
+---
+
+## 🏠 Module: providers/local (Phase 3)
+
+**File:** `lib/runtime/providers/local.js`
+
+`LocalMemoryProvider` is Memora's **built-in zero-dependency memory provider**. It bridges the Phase 2 Transcript Layer (`TranscriptStore` + `recallTranscripts`) to the Phase 3 `MemoryProvider` contract.
+
+- `isAvailable()` always returns `true` — no external service required
+- `store` is injectable via constructor option for isolated testing
+
+### Quick start
+
+```js
+const { LocalMemoryProvider } = require('./lib/runtime/providers/local');
+
+// Default — creates its own TranscriptStore pointing at memory-bank/.local/
+const provider = new LocalMemoryProvider();
+
+// Custom data directory
+const provider = new LocalMemoryProvider({ dataDir: '/path/to/data' });
+
+// Inject a pre-built store (testing)
+const provider = new LocalMemoryProvider({ store: testStore });
+```
+
+### Lifecycle mapping
+
+| `MemoryProvider` method | `LocalMemoryProvider` behavior |
+|---|---|
+| `initialize(sessionId, opts)` | Lazy-creates `TranscriptStore`; calls `store.openSession()` |
+| `prefetch(query, opts)` | Calls `recallTranscripts(store, query, opts)`; returns fenced block string (or `''` if no matches) |
+| `syncTurn(user, assistant)` | Calls `store.appendMessage()` for user then assistant messages |
+| `onSessionEnd(messages)` | Calls `store.closeSession()` |
+| `shutdown()` | Calls `store.closeSession()` as safety fallback (idempotent) |
+
+Out-of-scope for Phase 3 (inherited no-op defaults): tool schemas, `systemPromptBlock`, `queuePrefetch`, `onTurnStart`, `onPreCompress`, `onMemoryWrite`, `onDelegation`.
+
+---
+
 ## 🔌 Public API (`lib/runtime/index.js`)
 
-The `index.js` module re-exports all three sub-modules and provides a high-level convenience API.
+The `index.js` module re-exports all sub-modules and provides a high-level convenience API covering all three phases.
 
 ```js
 const runtime = require('./lib/runtime');
@@ -426,12 +600,102 @@ runtime.resetSession();              // clear active snapshot
 
 ---
 
+---
+
+### Transcript API (Phase 2)
+
+#### `runtime.openTranscriptSession(sessionId, meta)`
+
+Open a new transcript session. Returns `{ opened, session, diagnostics }`.
+
+```js
+const { opened, session } = runtime.openTranscriptSession('sess-001', {
+  projectDir: process.cwd(),
+  source:     'claude',
+  title:      'Sprint planning',
+});
+```
+
+#### `runtime.appendTranscriptMessage(sessionId, message)`
+
+Append a message to an open session. Returns `{ appended, message, diagnostics }`.
+
+```js
+runtime.appendTranscriptMessage('sess-001', { role: 'user', content: 'Hello' });
+```
+
+#### `runtime.recallTranscripts(query, options)`
+
+Search transcript history and return a `RecallResult` (fenced block + metadata).
+
+```js
+const { found, block, sessionCount } = runtime.recallTranscripts('sprint planning', {
+  maxSessions: 3,
+  source:      'claude',
+});
+if (found) injectIntoPrompt(block);
+```
+
+#### `runtime.resetTranscriptStore(store?)`
+
+Clear (or replace) the module-level `TranscriptStore` singleton — use between test runs.
+
+---
+
+### Provider Registry API (Phase 3)
+
+#### `runtime.getProviderRegistry()`
+
+Return the module-level `ProviderRegistry` singleton (lazy-initialized).
+
+```js
+const registry = runtime.getProviderRegistry();
+registry.addProvider(new runtime.localProvider.LocalMemoryProvider());
+registry.initializeAll(sessionId, { projectDir, source: 'claude' });
+```
+
+#### `runtime.resetProviderRegistry(registry?)`
+
+Clear (or replace) the module-level `ProviderRegistry` singleton — use between test runs.
+
+#### `runtime.onTurnStart(turnNumber, message, opts)`
+
+Fan-out to all registered providers at the start of each agent turn.
+
+#### `runtime.onSessionEnd(messages)`
+
+Fan-out to all registered providers when the agent session ends.
+
+#### `runtime.onPreCompress(messages)` → `string`
+
+Fan-out before context compression. Returns combined provider contributions (joined by `"\n\n"`).
+
+#### `runtime.onMemoryWrite(action, target, content)`
+
+Fan-out when a canonical memory file is written. `action`: `'add' | 'replace' | 'remove'`.
+
+#### `runtime.onDelegation(task, result, opts)`
+
+Fan-out after a subagent delegation completes.
+
+---
+
 ### Low-level sub-module access
 
 ```js
-runtime.security  // → { scanMemoryContent, scanContextContent }
-runtime.snapshot  // → { createSnapshot, buildAndActivateSnapshot, ... }
-runtime.fenced    // → { buildRecallBlock, sanitizeRecalledContent, ... }
+// Phase 1
+runtime.security        // → { scanMemoryContent, scanContextContent }
+runtime.snapshot        // → { createSnapshot, buildAndActivateSnapshot, ... }
+runtime.fenced          // → { buildRecallBlock, sanitizeRecalledContent, ... }
+
+// Phase 2
+runtime.transcriptStore  // → { TranscriptStore }
+runtime.transcriptRecall // → { recallTranscripts, formatConversation, ... }
+
+// Phase 3
+runtime.provider         // → { MemoryProvider }
+runtime.providerRegistry // → { ProviderRegistry }
+runtime.localProvider    // → { LocalMemoryProvider }
 ```
 
 ---
@@ -514,39 +778,29 @@ The runtime layer is a **read-and-screen gate**, not a replacement for the knowl
 - `index.js` — high-level public API
 - 134 tests, all green
 
-### Phase 2 — 🔄 In Progress
+### Phase 2 — ✅ Complete (2026-04-16)
 
-**Step 1 — ✅ Shipped (2026-04-16):**
+- **Step 1** — `lib/runtime/transcript/store.js` — JSONL-backed `TranscriptStore`; `writeFileAtomic()` (FR-006); rich schema (FR-009); `search()` (FR-010 baseline); 44 tests ✓
+- **Step 2** — `lib/runtime/transcript/recall.js` — `formatConversation` + `truncateAroundMatches` + `buildSessionBlock` + `recallTranscripts()` → `RecallResult`; degraded mode (FR-011) ✓
+- **Step 3** — `lib/runtime/index.js` public API: `openTranscriptSession`, `appendTranscriptMessage`, `recallTranscripts`, `resetTranscriptStore` ✓
+- **Step 4** — 28 integration tests (FR-002, FR-007, FR-009, FR-010, FR-011, FR-016) ✓
 
-- `lib/runtime/transcript/store.js` — JSONL-backed `TranscriptStore`
-  - `writeFileAtomic()` — tempfile + os.rename (FR-006)
-  - Rich session/message schema — `SessionRecord` + `MessageRecord` (FR-009)
-  - `search()` — case-insensitive recall, session grouping, recency sort (FR-010 baseline)
-  - 44 tests, all green
+### Phase 3 — 🔄 In Progress (2026-04-16)
 
-**Step 2 — ✅ Shipped (2026-04-16):**
+**Step 1 — ✅ Shipped:**
+- `lib/runtime/provider.js` — `MemoryProvider` base class; all lifecycle methods as no-op defaults; `handleToolCall` throws by contract (FR-014 contract layer)
 
-- `lib/runtime/transcript/recall.js` — recall pipeline (FR-011):
-  - `formatConversation()` — port of Hermes `_format_conversation`; renders `MessageRecord[]` to readable text
-  - `truncateAroundMatches()` — port of Hermes `_truncate_around_matches`; smart window, 25%/75% bias
-  - `buildSessionBlock()` — session header + truncated excerpt
-  - `recallTranscripts(store, query, opts)` → `RecallResult { found, block, sessionCount, diagnostics }`
-  - Degraded mode (no LLM): structured excerpt + fenced block via `buildRecallBlock()`
+**Step 2 — ✅ Shipped:**
+- `lib/runtime/provider-registry.js` — `ProviderRegistry` orchestrator; failure isolation per provider; `_fireAll` + `_collectStrings` fan-out helpers; tool routing via `_toolToProvider` map; all 5 lifecycle hooks (FR-015)
 
-**Step 3 — 📋 Next:**
+**Step 3 — ✅ Shipped:**
+- `lib/runtime/providers/local.js` — `LocalMemoryProvider`; bridges Phase 2 transcript API to Phase 3 contract; injectable store for testing; idempotent `_closeSession()` (FR-014 built-in provider)
 
-- Wire `TranscriptStore` + `recallTranscripts` into `lib/runtime/index.js` public API:
-  - `runtime.openTranscriptSession(sessionId, meta)`
-  - `runtime.appendTranscriptMessage(sessionId, message)`
-  - `runtime.recallTranscripts(query, options)`
-- Integration with `memory-restore` and `memory-explorer` workflows
+**Step 4 — ✅ Shipped:**
+- `lib/runtime/index.js` extended: `getProviderRegistry`, `resetProviderRegistry`, convenience wrappers for 5 lifecycle hooks, low-level re-exports for all Phase 3 modules (FR-014, FR-015)
 
-### Phase 3 — 📋 Planned
-
-MemoryProvider contract and lifecycle hooks:
-
-- Pluggable provider interface
-- Session lifecycle hooks (`on_turn_start`, `on_pre_compress`, `on_session_end`, `on_memory_write`, `on_delegation`)
+**Step 5 — 📋 Next:**
+- Unit/integration tests for `MemoryProvider`, `ProviderRegistry`, `LocalMemoryProvider` and Phase 3 `index.js` API
 
 ---
 
