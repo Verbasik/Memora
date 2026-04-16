@@ -291,11 +291,16 @@ To prevent the source repo's own `validate` and `doctor` from flagging those pla
       "memory-bank/ARCHITECTURE.md",
       "memory-bank/CONSTITUTION.md",
       "memory-bank/CONVENTIONS.md",
-      "memory-bank/TESTING.md"
+      "memory-bank/TESTING.md",
+      "memory-bank/DECISIONS.md",
+      "memory-bank/OPEN_QUESTIONS.md",
+      "memory-bank/CHANGELOG.md"
     ]
   }
 }
 ```
+
+The allowlist must contain only files with genuine `[placeholder]` markers in their YAML frontmatter. Files without frontmatter placeholders (e.g. `INDEX.md`, `LIFECYCLE.md`) and session-skipped files (`.local/`) should not be included — they are not subject to placeholder checks regardless.
 
 ### How it works
 
@@ -310,6 +315,30 @@ A project created with `memora init` has no `package.json` with `memora.repoRole
 - Placeholder checks run normally.
 - `extended` and `governance` profiles flag unfilled canonical files.
 - This is intentional: Memora reminds you to fill in the memory-bank.
+
+### Placeholder heuristic
+
+The placeholder heuristic matches known scaffold token prefixes such as `[ГГГГ`, `[project-slug]`, `[Название`, `[Описание`, `[module]`, etc. It does **not** match angle-bracket path notation like `AGENTS/<agent>.md` — those are documentation strings, not placeholders.
+
+---
+
+## 📺 Watch mode
+
+```bash
+memora validate --watch
+memora validate --scope memory --watch
+memora validate --scope repo-docs --watch
+```
+
+Watch mode re-runs validation when tracked `.md` files change. The watched paths are scope-aware:
+
+| Scope | Watched paths |
+|-------|--------------|
+| `memory` | `memory-bank/` (recursive) |
+| `repo-docs` | `docs/` (recursive) + `README.md` |
+| `all` | All of the above |
+
+If recursive watching fails with `EMFILE: too many open files` (common on macOS with large trees), Memora falls back to top-level-only watching and prints a diagnostic with the suggested fix: `ulimit -n 4096`.
 
 ---
 

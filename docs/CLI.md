@@ -129,7 +129,7 @@ memora validate ./my-project
 - `--profile core|extended|governance`: Choose how strict and comprehensive validation should be.
 - `--strict`: Promote recommended-field warnings to errors.
 - `--format text|json`: Choose human-readable or machine-readable output.
-- `--watch`: Re-run validation when memory-bank markdown files change.
+- `--watch`: Re-run validation when tracked `.md` files change. Watched paths are scope-aware: `memory` watches `memory-bank/`; `repo-docs` watches `docs/` and `README.md`; `all` watches both.
 
 ### Validation scopes
 
@@ -141,7 +141,7 @@ The `--scope` flag separates two independent validation surfaces:
 | `repo-docs` | `README.md` and `docs/**` — internal link integrity of repository documentation |
 | `all` | Both `memory` and `repo-docs` combined (default) |
 
-Use `--scope memory` when you only care about memory-bank correctness — for example, in pre-commit hooks or focused authoring loops. Use `--scope repo-docs` to audit documentation links without touching memory validation.
+Use `--scope memory` when you only care about memory-bank correctness — for example, in pre-commit hooks or focused authoring loops. Use `--scope repo-docs` to audit documentation links without touching memory validation. Note: `--scope repo-docs` does not require `memory-bank/` to be present and can run in any directory with `README.md` or `docs/`.
 
 ### What it validates
 
@@ -262,13 +262,20 @@ memora doctor --format json
 
 ### Watch mode
 
-Useful while authoring memory-bank files:
+Useful while authoring files. Watched paths are scope-aware:
 
 ```bash
+# Watch memory-bank/ only
+memora validate --scope memory --watch
+
+# Watch docs/ and README.md only
+memora validate --scope repo-docs --watch
+
+# Watch all surfaces (default)
 memora validate --watch
 ```
 
-This gives a fast local feedback loop and keeps markdown structure visible during editing.
+If recursive watching fails with `EMFILE: too many open files` (macOS), Memora falls back to top-level watching and suggests `ulimit -n 4096`.
 
 ---
 
