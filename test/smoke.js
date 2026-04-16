@@ -11,6 +11,7 @@ const node = process.execPath;
 const manifest = JSON.parse(
   fs.readFileSync(path.join(repoRoot, 'scaffold.manifest.json'), 'utf8')
 );
+const { extractFrontMatter } = require('../lib/validate');
 
 function run(command, args, options = {}) {
   const result = spawnSync(command, args, {
@@ -235,12 +236,65 @@ function runMissingLocalSessionScenario() {
   );
 }
 
+// ── Step 9: YAML / frontmatter parser edge cases ──────────────────────────────
+
+function runFrontmatterEdgeCasesScenario() {
+  // quoted # inside value must NOT be treated as inline comment
+  {
+    const fm = extractFrontMatter('---\ntitle: "Section # not a comment"\n---\n');
+    assert.strictEqual(
+      fm.title, 'Section # not a comment',
+      'Quoted # inside string value must not be stripped'
+    );
+  }
+
+  // inline comment after unquoted scalar must be stripped
+  {
+    const fm = extractFrontMatter('---\nversion: 1 # inline comment\n---\n');
+    assert.strictEqual(fm.version, 1, 'Inline # comment after scalar must be stripped');
+  }
+
+  // inline array with quoted comma must not split item at comma
+  {
+    const fm = extractFrontMatter('---\ntags: ["tag,one", "tag two"]\n---\n');
+    assert.deepStrictEqual(
+      fm.tags, ['tag,one', 'tag two'],
+      'Quoted comma in inline array must not split item'
+    );
+  }
+
+  // nested object for provenance must parse as object with sub-keys
+  {
+    const fm = extractFrontMatter(
+      '---\nprovenance:\n  source: git-log\n  date: "2026-01-01"\n---\n'
+    );
+    assert.strictEqual(typeof fm.provenance, 'object', 'Nested object must parse as object');
+    assert.strictEqual(fm.provenance.source, 'git-log', 'Nested key source must parse');
+    assert.strictEqual(fm.provenance.date, '2026-01-01', 'Nested key date must parse');
+  }
+
+  // optional .local references do not produce broken-link errors in memory scope
+  {
+    const projectRoot = makeProjectDir('memora-local-refs-');
+    initGitRepo(projectRoot);
+    run(node, ['bin/memora.js', 'init', projectRoot], { cwd: repoRoot });
+    fs.rmSync(path.join(projectRoot, 'memory-bank/.local'), { recursive: true, force: true });
+
+    const report = runValidateJson(projectRoot, ['--scope', 'memory', '--profile', 'core']);
+    assert.equal(
+      report.errors.length, 0,
+      `--scope memory must not produce errors for missing .local refs. Errors: ${JSON.stringify(report.errors, null, 2)}`
+    );
+  }
+}
+
 function main() {
   runInitScenario({ includeAssets: false, includeServices: false });
   runInitScenario({ includeAssets: true, includeServices: true });
   runPostinstallScenario();
   runSchemaContractScenario();
   runMissingLocalSessionScenario();
+  runFrontmatterEdgeCasesScenario();
   process.stdout.write('Smoke tests passed.\n');
 }
 
