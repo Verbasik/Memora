@@ -8,7 +8,7 @@ const path = require('path');
 const { execSync } = require('child_process');
 const { loadManifest, collectEntries, ensureDir, copyEntries } = require('../lib/scaffold');
 const { runDoctor } = require('../lib/doctor');
-const { runValidation, VALIDATION_PROFILES } = require('../lib/validate');
+const { runValidation, VALIDATION_PROFILES, VALIDATION_SCOPES } = require('../lib/validate');
 
 function log(message) {
   process.stdout.write(message + '\n');
@@ -34,7 +34,7 @@ function buildHelp(version) {
   return `Memora CLI v${version}
 Usage:
   memora init [target-dir] [--force] [--no-init] [--include-assets] [--include-services]
-  memora validate [target-dir] [--profile core|extended|governance] [--strict] [--format text|json] [--watch]
+  memora validate [target-dir] [--scope memory|repo-docs|all] [--profile core|extended|governance] [--strict] [--format text|json] [--watch]
   memora doctor [target-dir] [--format text|json]
 
 Commands:
@@ -49,6 +49,7 @@ Flags (init):
   --include-services  Also copy services/_template/
 
 Flags (validate):
+  --scope name         Validation scope: memory | repo-docs | all (default: all)
   --profile name       Validation profile: core | extended | governance
   --strict            Treat recommended-field warnings as errors
   --format text|json  Output format (default: text)
@@ -76,6 +77,7 @@ function parseArgs(argv) {
     noInit: false,
     includeAssets: false,
     includeServices: false,
+    scope: 'all',
     profile: 'core',
     strict: false,
     format: 'text',
@@ -109,7 +111,8 @@ function parseArgs(argv) {
     for (let i = 1; i < rest.length; i++) {
       const arg = rest[i];
       if (!arg) continue;
-      if (arg === '--profile' && rest[i + 1]) args.profile = rest[++i];
+      if (arg === '--scope' && rest[i + 1]) args.scope = rest[++i];
+      else if (arg === '--profile' && rest[i + 1]) args.profile = rest[++i];
       else if (arg === '--strict') args.strict = true;
       else if (arg === '--watch') args.watch = true;
       else if (arg === '--format' && rest[i + 1]) args.format = rest[++i];
@@ -197,12 +200,12 @@ function validateMemoryBank(target, opts) {
 
   log('');
   log('─────────────────────────────────────────────────────────');
-  log(`Profile: ${results.profile}`);
+  log(`Profile: ${results.profile}  │  Scope: ${results.scope || 'all'}`);
   log(`Files: ${total}  │  Errors: ${results.errors.length}  │  Warnings: ${results.warnings.length}  │  Skipped: ${results.skipped.length}`);
 
   if (results.errors.length === 0) {
     log(results.warnings.length === 0
-      ? '✓ All memory-bank files are valid.'
+      ? '✓ All checked files are valid.'
       : '✓ No errors. Run with --strict to promote warnings to errors.');
   }
 
@@ -300,7 +303,13 @@ function main() {
       return;
     }
 
-    const opts = { strict: args.strict, format: args.format, profile: args.profile };
+    if (!VALIDATION_SCOPES.has(args.scope)) {
+      err(`✗ Unknown validation scope: ${args.scope}. Use: memory | repo-docs | all`);
+      process.exit(2);
+      return;
+    }
+
+    const opts = { strict: args.strict, format: args.format, profile: args.profile, scope: args.scope };
     if (args.watch) {
       watchMemoryBank(args.target, opts);
       return;
