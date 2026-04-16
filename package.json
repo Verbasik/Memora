@@ -56,11 +56,7 @@
       "memory-bank/TESTING.md",
       "memory-bank/DECISIONS.md",
       "memory-bank/OPEN_QUESTIONS.md",
-      "memory-bank/CHANGELOG.md",
-      "memory-bank/LIFECYCLE.md",
-      "memory-bank/INDEX.md",
-      "memory-bank/.local/CURRENT.md",
-      "memory-bank/.local/HANDOFF.md"
+      "memory-bank/CHANGELOG.md"
     ]
   }
 }
