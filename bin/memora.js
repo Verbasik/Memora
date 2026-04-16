@@ -8,7 +8,7 @@ const path = require('path');
 const { execSync } = require('child_process');
 const { loadManifest, collectEntries, ensureDir, copyEntries } = require('../lib/scaffold');
 const { runDoctor } = require('../lib/doctor');
-const { runValidation, VALIDATION_PROFILES, VALIDATION_SCOPES } = require('../lib/validate');
+const { runValidation, VALIDATION_PROFILES, VALIDATION_SCOPES, getWatchRoots } = require('../lib/validate');
 
 function log(message) {
   process.stdout.write(message + '\n');
@@ -212,14 +212,59 @@ function validateMemoryBank(target, opts) {
   return results.errors.length;
 }
 
+function startWatcher(root, onFileChange) {
+  if (root.isFile) {
+    // Watch a single file directly (e.g. README.md)
+    try {
+      fs.watch(root.watchPath, onFileChange);
+    } catch (e) {
+      err(`⚠  Could not watch ${root.label}: ${e.message}`);
+    }
+    return;
+  }
+
+  // Watch a directory — try recursive first, degrade on failure
+  try {
+    fs.watch(root.watchPath, { recursive: true }, onFileChange);
+    return;
+  } catch (e) {
+    if (e.code === 'EMFILE') {
+      err(`⚠  Too many open files (EMFILE) watching ${root.label} recursively.`);
+      err('   Falling back to top-level-only watch. Only direct .md changes will trigger re-validation.');
+      err('   Tip: raise your file descriptor limit with: ulimit -n 4096');
+    } else if (e.code !== 'ENOSYS') {
+      err(`⚠  Recursive watch unavailable for ${root.label}: ${e.message}`);
+    }
+  }
+
+  // Non-recursive fallback
+  try {
+    fs.watch(root.watchPath, onFileChange);
+  } catch (e2) {
+    err(`⚠  Could not watch ${root.label}: ${e2.message}`);
+  }
+}
+
 function watchMemoryBank(target, opts) {
-  const memoryBankDir = path.join(target, 'memory-bank');
-  if (!fs.existsSync(memoryBankDir)) {
-    err(`✗ memory-bank/ not found in: ${target}`);
+  const scope = opts.scope || 'all';
+  const roots = getWatchRoots(target, scope);
+
+  if (roots.length === 0) {
+    err(`✗ No watchable paths found for --scope ${scope} in: ${target}`);
     process.exit(2);
   }
 
-  log(`👁  Watching ${path.relative(process.cwd(), memoryBankDir)} for changes… (Ctrl+C to stop)\n`);
+  // For memory/all scope, require memory-bank to exist before watching
+  if (scope !== 'repo-docs') {
+    const memoryBankDir = path.join(target, 'memory-bank');
+    if (!fs.existsSync(memoryBankDir)) {
+      err(`✗ memory-bank/ not found in: ${target}`);
+      process.exit(2);
+    }
+  }
+
+  const labels = roots.map((r) => r.label).join(', ');
+  log(`👁  Watching ${labels} for changes… (Ctrl+C to stop)\n`);
   validateMemoryBank(target, opts);
 
   let debounceTimer = null;
@@ -238,11 +283,10 @@ function watchMemoryBank(target, opts) {
     }, debounceMs);
   }
 
-  try {
-    fs.watch(memoryBankDir, { recursive: true }, onFileChange);
-  } catch {
-    fs.watch(memoryBankDir, onFileChange);
-    err('⚠  Recursive watch not supported — watching top-level only. Upgrade to Node 20+ for full coverage.');
+  for (const root of roots) {
+    if (fs.existsSync(root.watchPath)) {
+      startWatcher(root, onFileChange);
+    }
   }
 
   process.on('SIGINT', () => {
