@@ -305,7 +305,7 @@ TranscriptStore.search(query)
 |---|---|
 | `formatConversation(messages)` | Format `MessageRecord[]` into a readable transcript (port of Hermes `_format_conversation`) |
 | `truncateAroundMatches(text, query, maxChars)` | Smart truncation centred on match positions (port of Hermes `_truncate_around_matches`) |
-| `formatSessionHeader(session)` | One-line session label: `Session: … | Source: … | Started: … | Messages: …` |
+| `formatSessionHeader(session)` | One-line session label: `Session: … \| Source: … \| Started: … \| Messages: …` |
 | `buildSessionBlock(session, messages, query, opts)` | Assemble header + excerpt for a single session result |
 | `recallTranscripts(store, query, opts)` | Main entry point — returns `RecallResult` |
 
