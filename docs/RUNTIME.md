@@ -17,6 +17,7 @@
 - [Module: snapshot](#-module-snapshot)
 - [Module: fenced-context](#-module-fenced-context)
 - [Module: transcript/store (Phase 2)](#️-module-transcriptstore-phase-2)
+- [Module: transcript/recall (Phase 2)](#-module-transcriptrecall-phase-2)
 - [Public API (lib/runtime/index.js)](#-public-api-libruntimeindexjs)
 - [Security patterns reference](#-security-patterns-reference)
 - [Usage examples](#-usage-examples)
@@ -49,7 +50,8 @@ lib/runtime/
 ├── snapshot.js           ← Frozen session snapshot semantics
 ├── fenced-context.js     ← Fenced recall block builder + sanitizer
 └── transcript/
-    └── store.js          ← JSONL-backed TranscriptStore (Phase 2)
+    ├── store.js          ← JSONL-backed TranscriptStore (Phase 2, Step 1)
+    └── recall.js         ← Recall pipeline: search → format → fenced block (Phase 2, Step 2)
 ```
 
 Each module is independently usable. The `index.js` re-exports all three Phase 1 sub-modules and provides a convenience API for the most common agent-facing operations.
@@ -275,6 +277,79 @@ const results = store.search('sprint', { maxSessions: 5, source: 'claude' });
 
 ---
 
+## 🔍 Module: transcript/recall (Phase 2)
+
+**File:** `lib/runtime/transcript/recall.js`
+
+Recall pipeline that transforms raw `TranscriptStore.search()` results into a canonical fenced recall block ready for agent context injection. Implements FR-011 (Recall summarization).
+
+### Pipeline
+
+```
+TranscriptStore.search(query)
+  → formatConversation(messages)        // human-readable transcript text per session
+  → truncateAroundMatches(text, query)  // smart window centred on match positions
+  → buildSessionBlock(session, text)    // labelled block with header + excerpt
+  → buildRecallBlock(assembled)         // canonical <memory_context> fenced block
+```
+
+### Design decisions
+
+- **No LLM summarization** — Memora's zero-dep constraint means structured text excerpts are returned instead of model-generated summaries. This is the explicit degraded mode from FR-011; a future optional summarizer can be layered on top of `recallTranscripts()` without changing the interface.
+- **`DEFAULT_MAX_SESSION_CHARS = 40 000`** — Hermes uses 100k (for an LLM summarizer). Memora's recall goes directly into agent context injection, where a smaller window is more appropriate.
+- **Failure isolation** — errors from `store.search()` are caught and surfaced in `diagnostics`, never re-thrown. The caller always receives a well-formed `RecallResult`.
+
+### Functions
+
+| Function | Purpose |
+|---|---|
+| `formatConversation(messages)` | Format `MessageRecord[]` into a readable transcript (port of Hermes `_format_conversation`) |
+| `truncateAroundMatches(text, query, maxChars)` | Smart truncation centred on match positions (port of Hermes `_truncate_around_matches`) |
+| `formatSessionHeader(session)` | One-line session label: `Session: … | Source: … | Started: … | Messages: …` |
+| `buildSessionBlock(session, messages, query, opts)` | Assemble header + excerpt for a single session result |
+| `recallTranscripts(store, query, opts)` | Main entry point — returns `RecallResult` |
+
+### RecallResult shape
+
+```js
+{
+  found:        boolean,  // true if at least one session matched
+  block:        string,   // fenced recall block ('' if not found)
+  sessionCount: number,   // sessions included in the block
+  query:        string,   // the trimmed query that was used
+  diagnostics:  string,   // human-readable status message
+}
+```
+
+### Truncation strategy
+
+`truncateAroundMatches` uses three strategies in priority order (mirrors Hermes `_truncate_around_matches`):
+
+1. **Full-phrase positions** — case-insensitive exact phrase match.
+2. **Proximity co-occurrence** — all query terms appear within 200 chars of the rarest-term position.
+3. **Individual term positions** — any occurrence of any query word (last resort).
+
+Window selection: for each candidate position, the window `[pos − maxChars/4, pos + 3·maxChars/4]` is scored by how many match positions it covers. The window with the highest score is chosen.
+
+### Usage
+
+```js
+const { TranscriptStore } = require('./lib/runtime/transcript/store');
+const { recallTranscripts } = require('./lib/runtime/transcript/recall');
+
+const store = new TranscriptStore();
+const result = recallTranscripts(store, 'sprint planning', { maxSessions: 3 });
+
+if (result.found) {
+  // result.block is a ready-to-inject <memory_context type="recall"> fenced block
+  console.log(result.block);
+} else {
+  console.log(result.diagnostics);  // e.g. 'No sessions found matching "sprint planning".'
+}
+```
+
+---
+
 ## 🔌 Public API (`lib/runtime/index.js`)
 
 The `index.js` module re-exports all three sub-modules and provides a high-level convenience API.
@@ -449,16 +524,21 @@ The runtime layer is a **read-and-screen gate**, not a replacement for the knowl
   - `search()` — case-insensitive recall, session grouping, recency sort (FR-010 baseline)
   - 44 tests, all green
 
-**Step 2 — 📋 Next:**
+**Step 2 — ✅ Shipped (2026-04-16):**
 
-- `lib/runtime/transcript/recall.js` — recall pipeline:
-  - `TranscriptStore.search()` → format session context
-  - Truncation centered on matches (similar to Hermes `_truncate_around_matches`)
-  - `buildRecallBlock()` wrapping for safe injection (FR-011)
+- `lib/runtime/transcript/recall.js` — recall pipeline (FR-011):
+  - `formatConversation()` — port of Hermes `_format_conversation`; renders `MessageRecord[]` to readable text
+  - `truncateAroundMatches()` — port of Hermes `_truncate_around_matches`; smart window, 25%/75% bias
+  - `buildSessionBlock()` — session header + truncated excerpt
+  - `recallTranscripts(store, query, opts)` → `RecallResult { found, block, sessionCount, diagnostics }`
+  - Degraded mode (no LLM): structured excerpt + fenced block via `buildRecallBlock()`
 
-**Step 3 — 📋 Planned:**
+**Step 3 — 📋 Next:**
 
-- Wire `TranscriptStore` into `lib/runtime/index.js` public API
+- Wire `TranscriptStore` + `recallTranscripts` into `lib/runtime/index.js` public API:
+  - `runtime.openTranscriptSession(sessionId, meta)`
+  - `runtime.appendTranscriptMessage(sessionId, message)`
+  - `runtime.recallTranscripts(query, options)`
 - Integration with `memory-restore` and `memory-explorer` workflows
 
 ### Phase 3 — 📋 Planned
