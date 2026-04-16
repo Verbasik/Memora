@@ -11,7 +11,7 @@ const node = process.execPath;
 const manifest = JSON.parse(
   fs.readFileSync(path.join(repoRoot, 'scaffold.manifest.json'), 'utf8')
 );
-const { extractFrontMatter } = require('../lib/validate');
+const { extractFrontMatter, getWatchRoots } = require('../lib/validate');
 
 function run(command, args, options = {}) {
   const result = spawnSync(command, args, {
@@ -462,6 +462,75 @@ function runDedupeLinkErrorsScenario() {
   }
 }
 
+// ── Watch roots unit tests ────────────────────────────────────────────────────
+
+function runWatchRootsScenario() {
+  const projectRoot = makeProjectDir('memora-watch-roots-');
+  initGitRepo(projectRoot);
+  run(node, ['bin/memora.js', 'init', projectRoot], { cwd: repoRoot });
+
+  // Add README.md and docs/ so repo-docs roots are present
+  fs.writeFileSync(path.join(projectRoot, 'README.md'), '# Test\n');
+  fs.mkdirSync(path.join(projectRoot, 'docs'), { recursive: true });
+  fs.writeFileSync(path.join(projectRoot, 'docs/index.md'), '# Docs\n');
+
+  // --scope memory: only memory-bank/
+  {
+    const roots = getWatchRoots(projectRoot, 'memory');
+    assert.equal(roots.length, 1, 'memory scope must produce exactly 1 watch root');
+    assert.equal(roots[0].label, 'memory-bank/', 'memory scope root must be memory-bank/');
+    assert.equal(roots[0].isFile, false, 'memory-bank/ must be watched as directory');
+  }
+
+  // --scope repo-docs: docs/ and README.md
+  {
+    const roots = getWatchRoots(projectRoot, 'repo-docs');
+    const labels = roots.map((r) => r.label);
+    assert.ok(labels.includes('docs/'), 'repo-docs scope must include docs/');
+    assert.ok(labels.includes('README.md'), 'repo-docs scope must include README.md');
+    assert.ok(
+      roots.every((r) => r.label !== 'memory-bank/'),
+      'repo-docs scope must NOT include memory-bank/'
+    );
+    const readme = roots.find((r) => r.label === 'README.md');
+    assert.equal(readme.isFile, true, 'README.md must be watched as a file');
+  }
+
+  // --scope all: all three roots
+  {
+    const roots = getWatchRoots(projectRoot, 'all');
+    const labels = roots.map((r) => r.label);
+    assert.ok(labels.includes('memory-bank/'), 'all scope must include memory-bank/');
+    assert.ok(labels.includes('docs/'), 'all scope must include docs/');
+    assert.ok(labels.includes('README.md'), 'all scope must include README.md');
+  }
+
+  // no README.md: repo-docs must not include it
+  {
+    const noReadmeDir = makeProjectDir('memora-no-readme-');
+    initGitRepo(noReadmeDir);
+    run(node, ['bin/memora.js', 'init', noReadmeDir], { cwd: repoRoot });
+    fs.mkdirSync(path.join(noReadmeDir, 'docs'), { recursive: true });
+    // No README.md written
+    const roots = getWatchRoots(noReadmeDir, 'repo-docs');
+    assert.ok(
+      roots.every((r) => r.label !== 'README.md'),
+      'repo-docs scope must not include README.md when the file is absent'
+    );
+  }
+
+  // CLI "Watching …" message must list scope-correct roots
+  {
+    // We can't easily test the live watcher, but we can verify the watch startup
+    // message by checking that --scope repo-docs would NOT output "memory-bank"
+    // in its watching line. We do this by inspecting getWatchRoots directly.
+    const repoDocsRoots = getWatchRoots(projectRoot, 'repo-docs');
+    const watchLine = repoDocsRoots.map((r) => r.label).join(', ');
+    assert.ok(!watchLine.includes('memory-bank'), 'Watch line for repo-docs must not mention memory-bank');
+    assert.ok(watchLine.includes('README.md') || watchLine.includes('docs/'), 'Watch line for repo-docs must mention docs surface');
+  }
+}
+
 function main() {
   runInitScenario({ includeAssets: false, includeServices: false });
   runInitScenario({ includeAssets: true, includeServices: true });
@@ -475,6 +544,7 @@ function main() {
   runSourcePolicyAllowsPlaceholdersInScaffoldSource();
   runFreshScaffoldStillCatchesPlaceholders();
   runDedupeLinkErrorsScenario();
+  runWatchRootsScenario();
   process.stdout.write('Smoke tests passed.\n');
 }
 
