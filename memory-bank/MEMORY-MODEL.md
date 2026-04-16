@@ -9,7 +9,7 @@ pii_risk: "none"
 ttl: null
 tags: ["onboarding", "architecture", "reference"]
 last_verified: "2026-03-18"
-max_lines: 130
+max_lines: 160
 ---
 
 # Memory Model
@@ -124,3 +124,29 @@ Decay: `confirmed` >90д → `inferred`; `inferred` >60д → `observed`; `obser
 - Конфликт между фактами → `OPEN_QUESTIONS.md § Conflicts` → human review
 - Нарушение CONSTITUTION.md → `CONSTITUTION_CONFLICT` → остановить промоцию
 - Стабильный файл не обновлялся > 60 дней → пометить для review в `memory-audit`
+
+## Runtime Layer
+
+`lib/runtime/` — аддитивный слой поверх четырёх тиров. Он не заменяет и не упрощает
+canonical knowledge, а добавляет три отдельных домена:
+
+| Домен | Где живёт | Назначение | Источник истины |
+|---|---|---|---|
+| **Canonical memory** | `memory-bank/` | Долговременные знания проекта | Да — единственный |
+| **Transcript memory** | `lib/runtime/transcript/` | Журналы прошлых сессий для recall | Нет — не заменяет canonical |
+| **Provider layer** | `lib/runtime/providers/` | Optional runtime backends и lifecycle | Нет — аддитивный слой |
+
+**Ключевой инвариант:** transcript recall не является источником истины. Найденный
+в transcript фрагмент может только *кормить* promotion pipeline — вручную, после
+оценки confidence. Автоматической промоции из transcript в Semantic tier нет.
+
+Компоненты runtime layer:
+
+- **Phase 1 (Security)** — security screening writes + context files, frozen session
+  snapshots, fenced recall blocks → `lib/runtime/security-scanner.js`, `snapshot.js`
+- **Phase 2 (Transcript)** — JSONL TranscriptStore, recall pipeline, поиск по сессиям
+  → `lib/runtime/transcript/`
+- **Phase 3 (Providers)** — MemoryProvider contract, ProviderRegistry с failure
+  isolation, LocalMemoryProvider → `lib/runtime/provider*.js`, `providers/`
+
+Полный API: `docs/SERVICE.md`. Полный справочник: `docs/RUNTIME.md`.
