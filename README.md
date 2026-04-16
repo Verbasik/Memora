@@ -377,7 +377,7 @@ See [LICENSE](./LICENSE) file for full details.
 
 <div align="center">
 
-**Memora** — *Structured memory for long-lived AI coding work*
+**Memora** — _Structured memory for long-lived AI coding work_
 
 [⭐ Star us on GitHub](https://github.com/your-org/memora) · [📖 Read the docs](./docs/INDEX.md) · [💬 Join discussions](https://github.com/your-org/memora/discussions)
 

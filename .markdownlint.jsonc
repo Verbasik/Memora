@@ -22,8 +22,14 @@
   "MD060": false,
 
   "MD024": {
-    "allow_different_nesting": true
+    "siblings_only": true
   },
+
+  // MD051 (link-fragments): disabled due to incompatibility between
+  // GitHub anchor generation (preserves leading '-' from emoji prefix)
+  // and markdownlint v0.40 (strips leading hyphens). Internal link
+  // integrity is validated by `memora validate --scope repo-docs`.
+  "MD051": false,
 
   "MD046": {
     "style": "fenced"
