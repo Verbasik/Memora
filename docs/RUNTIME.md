@@ -16,6 +16,7 @@
 - [Module: security-scanner](#-module-security-scanner)
 - [Module: snapshot](#-module-snapshot)
 - [Module: fenced-context](#-module-fenced-context)
+- [Module: transcript/store (Phase 2)](#️-module-transcriptstore-phase-2)
 - [Public API (lib/runtime/index.js)](#-public-api-libruntimeindexjs)
 - [Security patterns reference](#-security-patterns-reference)
 - [Usage examples](#-usage-examples)
@@ -43,13 +44,15 @@ The runtime layer is **additive**. It does not replace or rewrite the `memory-ba
 
 ```text
 lib/runtime/
-├── index.js            ← Public high-level API
-├── security-scanner.js ← Prompt injection + exfiltration screening
-├── snapshot.js         ← Frozen session snapshot semantics
-└── fenced-context.js   ← Fenced recall block builder + sanitizer
+├── index.js              ← Public high-level API
+├── security-scanner.js   ← Prompt injection + exfiltration screening
+├── snapshot.js           ← Frozen session snapshot semantics
+├── fenced-context.js     ← Fenced recall block builder + sanitizer
+└── transcript/
+    └── store.js          ← JSONL-backed TranscriptStore (Phase 2)
 ```
 
-Each module is independently usable. The `index.js` re-exports all three and provides a convenience API for the most common agent-facing operations.
+Each module is independently usable. The `index.js` re-exports all three Phase 1 sub-modules and provides a convenience API for the most common agent-facing operations.
 
 **No external dependencies.** The runtime layer uses only Node.js built-ins (`fs`, `crypto`, `path`). It requires Node.js >= 16 (consistent with the rest of Memora).
 
@@ -196,6 +199,79 @@ Content is sanitized before being placed inside the block.
 3. Remove `[BLOCKED: ...]` stubs (added by `scanContextContent` when a file is blocked).
 4. Collapse 3+ consecutive blank lines to 2.
 5. Trim surrounding whitespace.
+
+---
+
+## 🗄️ Module: transcript/store (Phase 2)
+
+**File:** `lib/runtime/transcript/store.js`
+
+JSONL-backed session transcript storage. Stores conversation history separately from the canonical `memory-bank/`, satisfying the requirement that transcript memory must not pollute stable knowledge files.
+
+### Design decisions
+
+- **Zero external dependencies** — uses Node.js `fs` built-ins only (no `better-sqlite3`, no `node:sqlite`). Interface-stable: a future SQLite backend can replace the JSONL internals without changing callers.
+- **Atomic writes (FR-006)** — `writeFileAtomic()` writes to a temp file (`.filename.tmp.PID`, same directory) then calls `fs.renameSync()`. Concurrent readers always see either the old complete file or the new complete file — never a partially-written version.
+- **Append-only messages** — `fs.appendFileSync` is effectively atomic on POSIX for records below PIPE_BUF (~4 KB), which covers all transcript records.
+- **Default storage location** — `memory-bank/.local/` (two files: `transcript-sessions.jsonl` and `transcript-messages.jsonl`). Can be overridden via `options.dataDir`.
+
+### Session schema (`SessionRecord`)
+
+```js
+{
+  sessionId:    string,      // unique identifier, e.g. '20260416T143022-a3f1c9'
+  projectDir:   string,      // absolute path at open time
+  source:       string,      // 'claude' | 'codex' | 'qwen' | 'opencode' | 'cli' | 'test' | 'unknown'
+  startedAt:    string,      // ISO 8601
+  endedAt:      string|null, // ISO 8601, null while open
+  messageCount: number,
+  title:        string|null,
+}
+```
+
+### Message schema (`MessageRecord`)
+
+```js
+{
+  id:         number,      // auto-incrementing, file-scoped
+  sessionId:  string,
+  role:       string,      // 'user' | 'assistant' | 'tool' | 'system'
+  content:    string|null,
+  toolName:   string|null,
+  toolCalls:  string|null, // JSON-serialized array
+  timestamp:  string,      // ISO 8601
+  tokenCount: number|null,
+}
+```
+
+### API
+
+```js
+const { TranscriptStore } = require('./lib/runtime/transcript/store');
+const store = new TranscriptStore({ dataDir: '/path/to/data' });
+
+// Sessions
+const session  = store.openSession('sess-001', { source: 'claude', title: 'Sprint planning' });
+const sessions = store.listSessions({ limit: 10, source: 'claude' });
+const closed   = store.closeSession('sess-001', { title: 'Sprint review' });
+const found    = store.getSession('sess-001');
+
+// Messages
+const msg  = store.appendMessage('sess-001', { role: 'user', content: 'Hello' });
+const msgs = store.getMessages('sess-001');
+
+// Search (FR-010 baseline)
+const results = store.search('sprint', { maxSessions: 5, source: 'claude' });
+// returns: [{ session: SessionRecord, messages: MessageRecord[] }, ...]
+```
+
+### Search behavior
+
+`search(query, options)` performs case-insensitive substring matching across all message content. Results are:
+- grouped by session,
+- ordered by session `startedAt` descending (most recent first),
+- with stable tiebreaking by file insertion order when timestamps are equal,
+- limited to `maxSessions` sessions (default: 5).
 
 ---
 
@@ -363,13 +439,26 @@ The runtime layer is a **read-and-screen gate**, not a replacement for the knowl
 - `index.js` — high-level public API
 - 134 tests, all green
 
-### Phase 2 — 📋 Planned
+### Phase 2 — 🔄 In Progress
 
-SQLite + FTS5 transcript store:
+**Step 1 — ✅ Shipped (2026-04-16):**
 
-- `lib/runtime/transcript/store.js` — session/message schema, WAL mode
-- `lib/runtime/transcript/recall.js` — FTS5 search → session grouping → summary
-- Secure atomic write path (tempfile + rename)
+- `lib/runtime/transcript/store.js` — JSONL-backed `TranscriptStore`
+  - `writeFileAtomic()` — tempfile + os.rename (FR-006)
+  - Rich session/message schema — `SessionRecord` + `MessageRecord` (FR-009)
+  - `search()` — case-insensitive recall, session grouping, recency sort (FR-010 baseline)
+  - 44 tests, all green
+
+**Step 2 — 📋 Next:**
+
+- `lib/runtime/transcript/recall.js` — recall pipeline:
+  - `TranscriptStore.search()` → format session context
+  - Truncation centered on matches (similar to Hermes `_truncate_around_matches`)
+  - `buildRecallBlock()` wrapping for safe injection (FR-011)
+
+**Step 3 — 📋 Planned:**
+
+- Wire `TranscriptStore` into `lib/runtime/index.js` public API
 - Integration with `memory-restore` and `memory-explorer` workflows
 
 ### Phase 3 — 📋 Planned
@@ -377,7 +466,7 @@ SQLite + FTS5 transcript store:
 MemoryProvider contract and lifecycle hooks:
 
 - Pluggable provider interface
-- Session lifecycle hooks (pre-write, post-recall, on-error)
+- Session lifecycle hooks (`on_turn_start`, `on_pre_compress`, `on_session_end`, `on_memory_write`, `on_delegation`)
 
 ---
 
