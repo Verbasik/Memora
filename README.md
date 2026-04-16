@@ -333,23 +333,22 @@ Memora is **actively developed**. The roadmap builds on our solid foundation:
 
 ### Recently Shipped
 
-- ✅ **Recall pipeline (Phase 2, Step 2)** — `lib/runtime/transcript/recall.js`: `formatConversation`, `truncateAroundMatches` (port of Hermes), `buildSessionBlock`, `recallTranscripts` → fenced recall block (FR-011)
-- ✅ **Transcript store (Phase 2, Step 1)** — `lib/runtime/transcript/store.js`: JSONL-backed `TranscriptStore`, atomic writes (FR-006), rich session/message schema (FR-009), substring recall search (FR-010), 44 tests
+- ✅ **Transcript Recall Layer complete (Phase 2)** — full pipeline: `TranscriptStore` (JSONL, atomic writes) → `recall.js` (format + truncate + fenced block) → `lib/runtime/index.js` public API (`openTranscriptSession`, `appendTranscriptMessage`, `recallTranscripts`) → 28 integration tests (FR-002, FR-006, FR-007, FR-009, FR-010, FR-011, FR-016)
 - ✅ **Runtime security layer (Phase 1)** — `lib/runtime/`: security screening, frozen snapshots, fenced recall blocks (134 tests)
 - ✅ **Compatibility matrix** — Full feature matrix across all four toolchains ([docs/COMPATIBILITY.md](./docs/COMPATIBILITY.md))
 - ✅ **Guardrail baseline** — Canonical secret-protection baseline for all providers ([docs/SECURITY.md](./docs/SECURITY.md))
 
 ### Current Focus (Q2 2026)
 
-- 🔗 **Runtime API wiring (Phase 2, Step 3)** — `TranscriptStore` + `recallTranscripts` into `lib/runtime/index.js` public API
 - 🛠️ **Install diagnostics** — Better `memora doctor` output
 - 🤖 **Memory automation** — Smart consolidation and cleanup helpers
+- 🔌 **MemoryProvider contract (Phase 3)** — Pluggable provider interface and lifecycle hooks
 
 ### Coming Soon
 
-- 🔌 **MemoryProvider contract (Phase 3)** — Pluggable provider interface and lifecycle hooks
 - 🔧 **Adapter enhancements** — Deeper integration for each toolchain
 - 📊 **Observability tooling** — Better audit trails and diagnostics
+- ⚙️ **Lifecycle hooks (Phase 3)** — `on_turn_start`, `on_pre_compress`, `on_session_end`, `on_memory_write`, `on_delegation`
 
 **See [CHANGELOG](./CHANGELOG.md) for recent updates and [DECISIONS](./memory-bank/DECISIONS.md) for architectural context.**
 
