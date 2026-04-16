@@ -138,18 +138,18 @@ Memora follows a **simple, repeatable workflow**:
 ```
 ┌─────────────────────────────────────────────────────┐
 │ 1. Agent starts session                             │
-│    └─> Reads: AGENTS.md (entry point)              │
+│    └─> Reads: AGENTS.md (entry point)               │
 ├─────────────────────────────────────────────────────┤
 │ 2. Load context                                     │
-│    └─> Checks: memory-bank/INDEX.md (routing)      │
-│    └─> Reads: Only relevant files (via routing)    │
+│    └─> Checks: memory-bank/INDEX.md (routing)       │
+│    └─> Reads: Only relevant files (via routing)     │
 ├─────────────────────────────────────────────────────┤
 │ 3. Work on task                                     │
-│    └─> Solves problem, writes code, creates docs   │
+│    └─> Solves problem, writes code, creates docs    │
 ├─────────────────────────────────────────────────────┤
 │ 4. Update memory                                    │
-│    └─> Updates: CURRENT.md, HANDOFF.md            │
-│    └─> Runs: Advisory hooks (reflect, consolidate) │
+│    └─> Updates: CURRENT.md, HANDOFF.md              │
+│    └─> Runs: Advisory hooks (reflect, consolidate)  │
 └─────────────────────────────────────────────────────┘
 ```
 
