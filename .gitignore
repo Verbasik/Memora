@@ -62,3 +62,7 @@ build/
 # Claude-specific
 .claude/worktrees/
 .claude/claud-memory/
+
+# Локальные клоны/артефакты исследования (не коммитятся)
+hermes-agent/
+docs/HERMES_RUNTIME_LAYER_TZ.md
