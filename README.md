@@ -75,8 +75,9 @@ Memora delivers a **production-ready foundation** for structured project memory:
 | 🤖 **GitHub Actions CI** | Core validation, extended validation, markdown linting |
 | 🔔 **Advisory Hooks** | Deterministic reminders for reflection, consolidation, cleanup |
 | 🔌 **Multi-Toolchain Support** | Native adapters for Claude Code, Codex CLI, Qwen Code, OpenCode |
+| 🔒 **Runtime Security Layer** | Programmatic screening of memory writes and context file injection against prompt injection, exfiltration, and invisible Unicode attacks |
 
-**Bottom line:** Memora gives you **structure, validation, and repeatable workflows** out of the box.
+**Bottom line:** Memora gives you **structure, validation, repeatable workflows, and runtime security** out of the box.
 
 ---
 
@@ -128,6 +129,17 @@ Deterministic workflows for **reproducible agent behavior**:
 - Same structure works with Claude Code, Codex CLI, Qwen Code, OpenCode
 - Toolchain-specific adapters (`.claude/`, `.agents/`, `.qwen/`, `.opencode/`)
 - Unified workflow across teams
+
+### 6. 🔒 Runtime Security Layer
+
+**Programmatic protection for prompt-adjacent memory**:
+
+- Security screening before every memory write — blocks prompt injection, role hijack, exfiltration payloads, invisible Unicode
+- Context file screening (`AGENTS.md`, `CLAUDE.md`, etc.) before injection — returns safe placeholder on block
+- Frozen session snapshot — memory context captured once at start, immune to mid-session drift
+- Fenced recall blocks — recalled content wrapped in canonical `<memory_context>` tags with sanitization
+
+See [Runtime Layer](./docs/RUNTIME.md) for full API reference.
 
 ---
 
@@ -295,6 +307,7 @@ Once your memory-bank is initialized:
 | **Validation** | [Validation](./docs/VALIDATION.md) — Schemas, strict mode, CI integration |
 | **Patterns** | [Patterns](./docs/PATTERNS.md) — Reusable techniques and templates |
 | **Security** | [Security](./docs/SECURITY.md) — Privacy zones, PII handling, safe practices |
+| **Runtime Layer** | [Runtime](./docs/RUNTIME.md) — Security screening, frozen snapshots, fenced recall |
 | **Design** | [Manifesto](./docs/MANIFESTO.md) — Philosophy & protocols behind Memora |
 
 ---
@@ -318,18 +331,24 @@ Memora works seamlessly across **all major AI coding agents**:
 
 Memora is **actively developed**. The roadmap builds on our solid foundation:
 
+### Recently Shipped
+
+- ✅ **Runtime security layer (Phase 1)** — `lib/runtime/`: security screening, frozen snapshots, fenced recall blocks (134 tests)
+- ✅ **Compatibility matrix** — Full feature matrix across all four toolchains ([docs/COMPATIBILITY.md](./docs/COMPATIBILITY.md))
+- ✅ **Guardrail baseline** — Canonical secret-protection baseline for all providers ([docs/SECURITY.md](./docs/SECURITY.md))
+
 ### Current Focus (Q2 2026)
 
+- 🗄️ **Transcript store (Phase 2)** — SQLite + FTS5 session recall, secure atomic writes, integration with memory-restore
 - 🔍 **Rich schema-driven validation** — Stricter, faster validation rules
 - 🛠️ **Install diagnostics** — Better `memora doctor` output
 - 🤖 **Memory automation** — Smart consolidation and cleanup helpers
-- 📦 **Starter templates** — Industry-specific memory-bank packs
 
 ### Coming Soon
 
+- 🔌 **MemoryProvider contract (Phase 3)** — Pluggable provider interface and lifecycle hooks
 - 🔧 **Adapter enhancements** — Deeper integration for each toolchain
 - 📊 **Observability tooling** — Better audit trails and diagnostics
-- 🚀 **Performance improvements** — Faster validation and scaffold delivery
 
 **See [CHANGELOG](./CHANGELOG.md) for recent updates and [DECISIONS](./memory-bank/DECISIONS.md) for architectural context.**
 

@@ -3,7 +3,7 @@
 **Purpose:** Provide a clear, role-based map of the Memora documentation set.  
 **Audience:** Users, maintainers, contributors, and AI-toolchain integrators.  
 **Read when:** You want to find the right technical document quickly.  
-**Last updated:** 2026-04-03
+**Last updated:** 2026-04-16
 
 **See also:** [../README.md](../README.md) | [../memory-bank/INDEX.md](../memory-bank/INDEX.md)
 
@@ -80,6 +80,12 @@ Read:
 - [Patterns](./PATTERNS.md)
 - [Manifesto](./MANIFESTO.md)
 
+### I want to understand runtime security and context screening
+Read:
+
+- [Runtime Layer](./RUNTIME.md)
+- [Security](./SECURITY.md)
+
 ---
 
 ## 👥 Documentation by role
@@ -102,6 +108,7 @@ Read:
 
 ### Security-conscious teams
 - [Security](./SECURITY.md)
+- [Runtime Layer](./RUNTIME.md)
 - [Patterns](./PATTERNS.md)
 - [Validation](./VALIDATION.md)
 
@@ -120,6 +127,8 @@ Read:
 | [WORKFLOWS.md](./WORKFLOWS.md) | Which memory workflows are included in the repository? |
 | [PATTERNS.md](./PATTERNS.md) | Which reusable knowledge and workflow patterns come with Memora? |
 | [SECURITY.md](./SECURITY.md) | How does Memora approach security and memory hygiene? |
+| [RUNTIME.md](./RUNTIME.md) | How does the runtime layer screen memory writes and context files? |
+| [COMPATIBILITY.md](./COMPATIBILITY.md) | Which provider versions and features are supported? |
 | [MANIFESTO.md](./MANIFESTO.md) | What design philosophy and protocol mindset shape Memora? |
 
 ---

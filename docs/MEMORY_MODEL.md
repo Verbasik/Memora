@@ -3,7 +3,7 @@
 **Purpose:** Explain how Memora structures project memory.  
 **Audience:** Users, maintainers, architects, contributors.  
 **Read when:** You want to understand the conceptual and practical layout of the Memora memory-bank.  
-**Last updated:** 2026-04-03
+**Last updated:** 2026-04-16
 
 **See also:** [Workflows](./WORKFLOWS.md) · [Patterns](./PATTERNS.md) · [Manifesto](./MANIFESTO.md) · [INDEX.md](./INDEX.md)
 
@@ -241,14 +241,52 @@ This separation is one of the reasons Memora remains scalable as projects and se
 
 ## 📂 Repository structure through the memory lens
 
-A typical Memora-enabled repository combines four concerns:
+A typical Memora-enabled repository combines five concerns:
 
 1. **CLI tooling** — command-line entry points
 2. **memory-bank scaffold** — the knowledge structure itself
 3. **operational automation** — hooks, validation, CI
 4. **toolchain adapters** — integration with AI coding environments
+5. **runtime layer** — programmatic security and session management (`lib/runtime/`)
 
 That makes the repository more than a prompt pack: it becomes a structured operating environment for agent memory.
+
+---
+
+## 🔒 Runtime layer
+
+Memora includes a **runtime layer** (`lib/runtime/`) that sits on top of the canonical `memory-bank/` without replacing it.
+
+The runtime layer provides three capabilities that the declarative memory model alone cannot enforce:
+
+### Frozen session snapshots
+
+When a session starts, the relevant memory files are captured into a frozen `SessionSnapshot`. The snapshot is immutable for the lifetime of the session: mid-session writes to `CURRENT.md` or other files do not affect what the agent sees.
+
+This prevents a class of bugs where memory drift during a long session causes the agent to reason from inconsistent state.
+
+### Security screening
+
+Before any content is written to a memory file or injected as a context file (`AGENTS.md`, `CLAUDE.md`, etc.), the runtime layer scans it for:
+
+- prompt injection payloads ("ignore previous instructions"),
+- role hijack attempts ("you are now"),
+- exfiltration commands (`curl $API_KEY`, `cat .env`),
+- invisible Unicode characters (zero-width spaces, directional overrides).
+
+This enforces at code level the security rules described declaratively in `SECURITY.md`.
+
+### Fenced recall blocks
+
+When content from a previous session is recalled and re-injected, it is wrapped in a canonical `<memory_context type="recall">` block and sanitized to remove any nested blocks, source comments, or blocked stubs.
+
+This prevents recursive context pollution and makes recalled content unambiguous to the agent.
+
+### Additive, not replacement
+
+The runtime layer **does not write to `memory-bank/`**. Canonical knowledge files remain the source of truth. The runtime layer is a read-and-screen gate.
+
+See [Runtime Layer](./RUNTIME.md) for full module documentation and API reference.
 
 ---
 
@@ -293,6 +331,7 @@ To continue from the model into actual usage:
 | [Workflows](./WORKFLOWS.md) | Learn the 8 memory lifecycle workflows |
 | [Patterns](./PATTERNS.md) | Explore reusable patterns & techniques |
 | [Validation](./VALIDATION.md) | Understand quality assurance & profiles |
+| [Runtime Layer](./RUNTIME.md) | Programmatic security screening and session snapshots |
 | [Toolchains](./TOOLCHAINS.md) | Set up AI agent integration |
 
 ---
