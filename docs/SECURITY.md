@@ -15,6 +15,7 @@
 - [What should never be stored](#-what-should-never-be-stored)
 - [Why memory hygiene matters](#-why-memory-hygiene-matters)
 - [Practical safeguards already included](#-practical-safeguards-already-included)
+- [Provider guardrail enforcement](#-provider-guardrail-enforcement)
 - [Privacy zones](#-privacy-zones)
 - [Safe operating practices](#-safe-operating-practices)
 - [Why Memora’s security approach is useful](#-why-memoras-security-approach-is-useful)
@@ -88,6 +89,46 @@ The repository includes maintenance workflows and deterministic advisory hooks t
 
 ### 5. Ignore-oriented local setup
 The initialization flow helps reinforce that local and sensitive session-state should stay separate from stable memory.
+
+---
+
+## 🛡️ Provider guardrail enforcement
+
+Memora's security controls differ by provider. Understanding this prevents the false assumption that all toolchains offer equivalent protection.
+
+### Baseline patterns
+
+The following file patterns constitute the canonical secret-protection baseline. All providers should treat these as sensitive:
+
+| Pattern | What it covers |
+|---|---|
+| `.env`, `.env.*` | Environment variable files |
+| `*.key` | Private key files |
+| `*.pem` | PEM-encoded certificates and keys |
+| `*.p12` | PKCS#12 certificate bundles |
+| `*credentials*` | Files with "credentials" in the name |
+| `*secret*` | Files with "secret" in the name |
+
+### Enforcement levels by provider
+
+| Provider | Enforcement level | Mechanism | Config files |
+|---|---|---|---|
+| **Claude Code** | **Hard** | `permissions.deny` + `.claudeignore` + security rules | `.claude/settings.json`, `.claudeignore`, `.claude/rules/security.md` |
+| **Qwen Code** | Partial | `.qwen/settings.qwenignore` file-exclusion rules | `.qwen/settings.qwenignore` |
+| **Codex CLI** | Advisory only | No native deny/ignore config | — |
+| **OpenCode** | Advisory only | No native deny/ignore config | — |
+
+### What "advisory only" means in practice
+
+For providers without hard enforcement (Codex, OpenCode), security protection relies on:
+
+1. **Workflow guidance** — memory-audit and other workflows include secret-scanning steps.
+2. **`AGENTS.md`** — the agent entry point establishes security operating expectations.
+3. **`memory-bank/POLICIES/`** — project-level data handling policies.
+4. **`.gitignore`** — excludes sensitive files from version control.
+5. **Pre-commit hooks** — `.githooks/pre-commit` can catch secrets before they land in commits.
+
+> **Rule:** Claude Code safeguards must not be weakened for the sake of cross-provider uniformity. Parity is achieved by strengthening other providers or documenting explicit limitations — never by degrading stronger controls.
 
 ---
 
