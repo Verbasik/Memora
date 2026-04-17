@@ -37,6 +37,17 @@
         ]
       }
     ],
+    "SessionEnd": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"$(git rev-parse --show-toplevel)/.claude/hooks/session-end.js\""
+          }
+        ]
+      }
+    ],
     "Stop": [
       {
         "matcher": "",
