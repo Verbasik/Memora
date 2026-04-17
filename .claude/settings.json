@@ -76,6 +76,10 @@
         "hooks": [
           {
             "type": "command",
+            "command": "node \"$(git rev-parse --show-toplevel)/.claude/hooks/stop.js\""
+          },
+          {
+            "type": "command",
             "command": "bash \"$(git rev-parse --show-toplevel)/memory-bank/scripts/check-reflect-trigger.sh\""
           },
           {
