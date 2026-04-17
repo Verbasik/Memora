@@ -54,11 +54,12 @@
   - `PreToolUse`/`PostToolUse` write gate → `.claude/hooks/pre-tool-use.js`, `post-tool-use.js` ✅
   - `SessionEnd` finalization → `.claude/hooks/session-end.js` ✅
 
-### Код реализован, runtime не верифицирован
-- Codex CLI bridge (FR-201–FR-204): JS-хуки написаны и unit-тесты проходят,
-  но Codex CLI v0.121.0 не вызывает hooks ни в `codex exec`, ни в TUI.
-  Функциональность `codex_hooks` помечена как `under development` в Codex.
-  Ожидаем обновления CLI. Подробности: FR-206 в `90_FR_COVERAGE.md`.
+### Реализовано (требует live-верификации)
+- Codex CLI bridge (FR-201–FR-204): JS-хуки написаны, unit-тесты проходят.
+  Исправлен config format: hooks перенесены из `[hooks.*]` в `config.toml`
+  в `.codex/hooks.json` (требование официальных docs OpenAI Codex).
+  Исправлен output format `SessionStart`: plain text вместо `{ additional_context }`.
+  Подробности: `90_FR_COVERAGE.md § Codex CLI`.
 
 ### Следующие этапы
 - Qwen Code: полный hook set (FR-301–FR-304).

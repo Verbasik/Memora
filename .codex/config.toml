@@ -16,35 +16,15 @@ sandbox = "workspace-write"
 project_doc_fallback_filenames = ["CLAUDE.md"]
 
 # ── Hooks ──────────────────────────────────────────────
-# СТАТУС: НЕ РАБОТАЕТ в Codex CLI v0.121.0 (верифицировано 2026-04-17).
+# Hooks объявляются в .codex/hooks.json (НЕ в config.toml).
+# Источник: официальные docs OpenAI Codex, 2026-04-17.
+#   https://developers.openai.com/codex/hooks
+#   https://developers.openai.com/codex/config-reference
 #
-# Проблема: Codex CLI не вызывает hooks ни из project config, ни из
-# ~/.codex/config.toml — ни в `codex exec`, ни в интерактивном TUI.
-# Функциональность `codex_hooks` помечена как `under development`
-# (codex features list → codex_hooks: under development / true).
+# Требования:
+#   1. codex_hooks = true в ~/.codex/config.toml  (уже выставлено)
+#   2. .codex/hooks.json в корне репо              (создан)
 #
-# Все JS-хуки ниже написаны и unit-тесты проходят. При ручном вызове
-# через `sh -c` работают корректно. Конфигурация оставлена для будущей
-# версии Codex CLI с рабочей поддержкой hooks.
-#
-# Отслеживать: обновления Codex CLI > v0.121.0 с fix для codex_hooks.
-# Задокументировано как FR-206 в docs/TZ/90_FR_COVERAGE.md.
-
-[hooks.SessionStart]
-command = "node \"$(git rev-parse --show-toplevel)/.codex/hooks/session-start.js\""
-
-[hooks.UserPromptSubmit]
-command = "node \"$(git rev-parse --show-toplevel)/.codex/hooks/user-prompt-submit.js\""
-
-[hooks.PreToolUse]
-command = "node \"$(git rev-parse --show-toplevel)/.codex/hooks/pre-tool-use.js\""
-
-[hooks.Stop]
-command = "bash \"$(git rev-parse --show-toplevel)/memory-bank/scripts/run-stop-hooks.sh\""
-
-# ── Fallback: notify (если hooks не работают) ──────────
-# Раскомментируй если [hooks.Stop] не поддерживается:
-#
-# [notify]
-# command = "bash \"$(git rev-parse --show-toplevel)/memory-bank/scripts/run-stop-hooks.sh\""
+# Формат hooks.json: { "hooks": { "SessionStart": [...], ... } }
+# Repo-local и ~/.codex/hooks.json запускаются оба (не override'ят друг друга).
 

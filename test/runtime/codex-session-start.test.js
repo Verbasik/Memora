@@ -71,8 +71,8 @@ test('maps Codex SessionStart payload to shared bootstrap input with toolchain=c
   assert.equal(calls[0].input.initializeProviders, false);
   assert.equal(calls[0].input.openTranscriptSession, true);
 
-  // Codex output format: { additional_context: "..." } — snake_case, not hookSpecificOutput
-  assert.deepStrictEqual(output, { additional_context: 'screened startup context' });
+  // Codex SessionStart output: plain text (per official docs 2026-04-17)
+  assert.strictEqual(output, 'screened startup context');
 });
 
 test('uses unknown-model fallback when model field is absent', () => {
@@ -91,7 +91,7 @@ test('uses unknown-model fallback when model field is absent', () => {
     cwd: projectDir,
   }, { bridge: fakeBridge });
 
-  assert.deepStrictEqual(output, { additional_context: 'ctx' });
+  assert.strictEqual(output, 'ctx');
 });
 
 test('returns null output when additionalContext is empty', () => {

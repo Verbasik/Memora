@@ -13,8 +13,9 @@ async function main() {
   const chars = output && output.additional_context ? output.additional_context.length : 0;
   log('SessionStart', `session=${payload.session_id} files=${files} injected=${chars}chars`);
 
+  // SessionStart output is plain text (matches UserPromptSubmit convention).
   if (output) {
-    process.stdout.write(JSON.stringify(output) + '\n');
+    process.stdout.write(output + '\n');
   }
 }
 
