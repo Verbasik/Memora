@@ -46,8 +46,8 @@
 | ID | Кратко | Покрытие официальными примерами | Статус реализации | Основание |
 |---|---|---|---|---|
 | FR-201 | Native bootstrap через `SessionStart` | Полное | Реализовано | `lib/runtime/bridge/codex.js`, `.codex/hooks/session-start.js`, `test/runtime/codex-session-start.test.js`; output: `{ additional_context }` (snake_case) |
-| FR-202 | Pre-turn recall через `UserPromptSubmit` | Полное | Не начато | plain-stdout example зафиксирован в ТЗ |
-| FR-203 | `PreToolUse` / `PostToolUse` не универсальны | Частичное | Не начато | provider shape ясен, но Memora explicit helper остаётся собственной адаптацией |
+| FR-202 | Pre-turn recall через `UserPromptSubmit` | Полное | Реализовано | `.codex/hooks/user-prompt-submit.js`, `handleUserPromptSubmit()`, plain stdout (не JSON); `test/runtime/codex-user-prompt-submit.test.js` |
+| FR-203 | `PreToolUse` / `PostToolUse` не универсальны | Частичное | Реализовано | `.codex/hooks/pre-tool-use.js` (Bash guard, exit 2), `writeCanonicalFile()` explicit helper, `.codex/hooks/memory-write-helper.js`; `test/runtime/codex-write-helper.test.js` |
 | FR-204 | `Stop` как checkpoint, не true close | Полное | Не начато | source-backed example есть, wiring нет |
 | FR-205 | Optional hard-close strategy | Частичное | Архитектурный пробел | у provider нет native `SessionEnd`, решение остаётся за Memora |
 
@@ -80,7 +80,7 @@
 - `SessionEnd` finalization ✅
 
 **Следующие в очереди:**
-- Codex CLI: FR-202–FR-204 (UserPromptSubmit, Stop-checkpoint, write helper)
+- Codex CLI: FR-204 (Stop checkpoint — последний Codex патч)
 - Qwen Code: FR-301–FR-304
 - OpenCode: FR-401–FR-404
 

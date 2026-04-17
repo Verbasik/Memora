@@ -53,10 +53,12 @@
   - `UserPromptSubmit` pre-turn recall → `.claude/hooks/user-prompt-submit.js`
   - `PreToolUse`/`PostToolUse` write gate → `.claude/hooks/pre-tool-use.js`, `post-tool-use.js`
   - `SessionEnd` finalization → `.claude/hooks/session-end.js`
-- Codex CLI — FR-201:
+- Codex CLI — FR-201–FR-203:
   - `SessionStart` bootstrap → `lib/runtime/bridge/codex.js`, `.codex/hooks/session-start.js`
+  - `UserPromptSubmit` recall (plain stdout) → `.codex/hooks/user-prompt-submit.js`
+  - `PreToolUse` Bash guard + `writeCanonicalFile` helper → `.codex/hooks/pre-tool-use.js`, `memory-write-helper.js`
 
 ### Следующие этапы
-- Codex CLI: FR-202–FR-204 (UserPromptSubmit, Stop-checkpoint, write helper).
+- Codex CLI: FR-204 (Stop checkpoint — последний Codex патч).
 - Qwen Code: полный hook set (FR-301–FR-304).
 - OpenCode: plugin bridge (FR-401–FR-404).
