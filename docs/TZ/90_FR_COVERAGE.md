@@ -45,10 +45,10 @@
 
 | ID | Кратко | Покрытие официальными примерами | Статус реализации | Основание |
 |---|---|---|---|---|
-| FR-201 | Native bootstrap через `SessionStart` | Полное | Реализовано | `lib/runtime/bridge/codex.js`, `.codex/hooks/session-start.js`, `test/runtime/codex-session-start.test.js`; output: `{ additional_context }` (snake_case) |
-| FR-202 | Pre-turn recall через `UserPromptSubmit` | Полное | Реализовано | `.codex/hooks/user-prompt-submit.js`, `handleUserPromptSubmit()`, plain stdout (не JSON); `test/runtime/codex-user-prompt-submit.test.js` |
-| FR-203 | `PreToolUse` / `PostToolUse` не универсальны | Частичное | Реализовано | `.codex/hooks/pre-tool-use.js` (Bash guard, exit 2), `writeCanonicalFile()` explicit helper, `.codex/hooks/memory-write-helper.js`; `test/runtime/codex-write-helper.test.js` |
-| FR-204 | `Stop` как checkpoint, не true close | Полное | Реализовано | `lib/runtime/bridge/codex.js` → `handleStop()`, `.codex/hooks/stop-checkpoint.js`, `run-stop-hooks.sh` проксирует payload; `test/runtime/codex-stop-checkpoint.test.js` |
+| FR-201 | Native bootstrap через `SessionStart` | Полное | Код готов, CLI не вызывает¹ | `lib/runtime/bridge/codex.js`, `.codex/hooks/session-start.js`, `test/runtime/codex-session-start.test.js`; JS-хук работает вручную, но Codex CLI v0.121.0 его не вызывает |
+| FR-202 | Pre-turn recall через `UserPromptSubmit` | Полное | Код готов, CLI не вызывает¹ | `.codex/hooks/user-prompt-submit.js`, `handleUserPromptSubmit()`, plain stdout; JS-хук работает вручную, но Codex CLI v0.121.0 его не вызывает |
+| FR-203 | `PreToolUse` / `PostToolUse` не универсальны | Частичное | Код готов, CLI не вызывает¹ | `.codex/hooks/pre-tool-use.js` (Bash guard, exit 2), `writeCanonicalFile()` explicit helper; JS-хук работает вручную, но Codex CLI v0.121.0 его не вызывает |
+| FR-204 | `Stop` как checkpoint, не true close | Полное | Код готов, CLI не вызывает¹ | `lib/runtime/bridge/codex.js` → `handleStop()`, `.codex/hooks/stop-checkpoint.js`, `run-stop-hooks.sh`; JS-хук работает вручную, но Codex CLI v0.121.0 его не вызывает |
 | FR-205 | Optional hard-close strategy | Частичное | Архитектурный пробел | у provider нет native `SessionEnd`, решение остаётся за Memora |
 
 ## Qwen Code
@@ -79,15 +79,25 @@
 - `PreToolUse`/`PostToolUse` write gate ✅
 - `SessionEnd` finalization ✅
 
-**Codex CLI — завершён (FR-201–FR-204):**
-- `SessionStart` bootstrap ✅
-- `UserPromptSubmit` pre-turn recall ✅
-- `PreToolUse` Bash guard + `writeCanonicalFile` ✅
-- `Stop` checkpoint ✅
+**Codex CLI — код реализован, runtime не верифицирован (FR-201–FR-204):**
+
+> ¹ Верифицировано тестированием 2026-04-17: Codex CLI v0.121.0 не вызывает hooks
+> ни из project `.codex/config.toml`, ни из global `~/.codex/config.toml` —
+> ни в `codex exec` (non-interactive), ни в интерактивном TUI.
+> Функциональность `codex_hooks` помечена как `under development`.
+> Все JS-хуки корректно работают при ручном вызове через `sh -c`.
+> Ожидаем обновления Codex CLI с рабочей поддержкой hooks.
+
+- `SessionStart` bootstrap: код ✅ / CLI вызов ❌
+- `UserPromptSubmit` pre-turn recall: код ✅ / CLI вызов ❌
+- `PreToolUse` Bash guard + `writeCanonicalFile`: код ✅ / CLI вызов ❌
+- `Stop` checkpoint: код ✅ / CLI вызов ❌
 
 **Следующие в очереди:**
 - Qwen Code: FR-301–FR-304
 - OpenCode: FR-401–FR-404
 
-**Единственный незакрытый архитектурный вопрос:** FR-205 / hard-close semantics для Codex CLI.
+**Открытые архитектурные вопросы:**
+- FR-205: hard-close semantics для Codex CLI (нет native `SessionEnd`)
+- FR-206: ожидание рабочей поддержки `codex_hooks` в Codex CLI (отслеживать при обновлениях)
 

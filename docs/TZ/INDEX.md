@@ -44,25 +44,21 @@
 - Примеры из официальных provider sources должны оставаться рядом с соответствующими требованиями.
 - Карта покрытия в [90_FR_COVERAGE.md](./90_FR_COVERAGE.md) обновляется после каждого значимого патча.
 
-## Текущий статус (2026-04-17, обновлено после FR-204)
+## Текущий статус (2026-04-17, обновлено после live-тестирования)
 
-### Завершено
+### Завершено (верифицировано в runtime)
 - Общий shared bridge layer (`lib/runtime/bridge/index.js`) — FR-001.
-- Claude Code bridge полностью реализован (FR-101–FR-104):
-  - `SessionStart` bootstrap → `lib/runtime/bridge/claude.js`
-  - `UserPromptSubmit` pre-turn recall → `.claude/hooks/user-prompt-submit.js`
-  - `PreToolUse`/`PostToolUse` write gate → `.claude/hooks/pre-tool-use.js`, `post-tool-use.js`
-  - `SessionEnd` finalization → `.claude/hooks/session-end.js`
-- Codex CLI — FR-201–FR-203:
-  - `SessionStart` bootstrap → `lib/runtime/bridge/codex.js`, `.codex/hooks/session-start.js`
-  - `UserPromptSubmit` recall (plain stdout) → `.codex/hooks/user-prompt-submit.js`
-  - `PreToolUse` Bash guard + `writeCanonicalFile` helper → `.codex/hooks/pre-tool-use.js`, `memory-write-helper.js`
+- Claude Code bridge полностью реализован и верифицирован (FR-101–FR-104):
+  - `SessionStart` bootstrap → `lib/runtime/bridge/claude.js` ✅
+  - `UserPromptSubmit` pre-turn recall → `.claude/hooks/user-prompt-submit.js` ✅
+  - `PreToolUse`/`PostToolUse` write gate → `.claude/hooks/pre-tool-use.js`, `post-tool-use.js` ✅
+  - `SessionEnd` finalization → `.claude/hooks/session-end.js` ✅
 
-- Codex CLI bridge полностью реализован (FR-201–FR-204):
-  - `SessionStart` bootstrap → `lib/runtime/bridge/codex.js`, `.codex/hooks/session-start.js`
-  - `UserPromptSubmit` recall (plain stdout) → `.codex/hooks/user-prompt-submit.js`
-  - `PreToolUse` Bash guard + `writeCanonicalFile` helper → `.codex/hooks/pre-tool-use.js`, `memory-write-helper.js`
-  - `Stop` checkpoint → `.codex/hooks/stop-checkpoint.js`, `run-stop-hooks.sh`
+### Код реализован, runtime не верифицирован
+- Codex CLI bridge (FR-201–FR-204): JS-хуки написаны и unit-тесты проходят,
+  но Codex CLI v0.121.0 не вызывает hooks ни в `codex exec`, ни в TUI.
+  Функциональность `codex_hooks` помечена как `under development` в Codex.
+  Ожидаем обновления CLI. Подробности: FR-206 в `90_FR_COVERAGE.md`.
 
 ### Следующие этапы
 - Qwen Code: полный hook set (FR-301–FR-304).

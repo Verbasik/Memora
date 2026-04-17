@@ -16,15 +16,19 @@ sandbox = "workspace-write"
 project_doc_fallback_filenames = ["CLAUDE.md"]
 
 # ── Hooks ──────────────────────────────────────────────
-# СТАТУС: experimental (добавлено в Codex CLI v0.114.0, март 2026).
-# Точный TOML-формат может измениться. Проверь актуальную документацию:
-#   codex --help | grep hook
+# СТАТУС: НЕ РАБОТАЕТ в Codex CLI v0.121.0 (верифицировано 2026-04-17).
 #
-# Codex поддерживает один [hooks.Stop], поэтому используем wrapper-скрипт,
-# который последовательно запускает все три advisory-хука:
-#   1. check-reflect-trigger.sh     (REFLECT_THRESHOLD,     default: 3)
-#   2. check-consolidate-trigger.sh (CONSOLIDATE_THRESHOLD, default: 5)
-#   3. check-gc-trigger.sh          (GC_THRESHOLD,          default: 20)
+# Проблема: Codex CLI не вызывает hooks ни из project config, ни из
+# ~/.codex/config.toml — ни в `codex exec`, ни в интерактивном TUI.
+# Функциональность `codex_hooks` помечена как `under development`
+# (codex features list → codex_hooks: under development / true).
+#
+# Все JS-хуки ниже написаны и unit-тесты проходят. При ручном вызове
+# через `sh -c` работают корректно. Конфигурация оставлена для будущей
+# версии Codex CLI с рабочей поддержкой hooks.
+#
+# Отслеживать: обновления Codex CLI > v0.121.0 с fix для codex_hooks.
+# Задокументировано как FR-206 в docs/TZ/90_FR_COVERAGE.md.
 
 [hooks.SessionStart]
 command = "node \"$(git rev-parse --show-toplevel)/.codex/hooks/session-start.js\""
