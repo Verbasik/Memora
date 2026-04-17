@@ -66,6 +66,7 @@ Read:
 - [Hooks](./HOOKS.md)
 - [Workflows](./WORKFLOWS.md)
 - [Runtime Bridge TЗ](./TZ/INDEX.md)
+- [Runtime Layer](./RUNTIME.md)
 
 ### I want to understand the included memory workflows
 Read:
@@ -87,6 +88,13 @@ Read:
 - [Runtime Layer](./RUNTIME.md)
 - [Security](./SECURITY.md)
 
+### I want to understand how automatic session recall works
+Read:
+
+- [Runtime Layer](./RUNTIME.md)
+- [Hooks](./HOOKS.md)
+- [Toolchains](./TOOLCHAINS.md)
+
 ---
 
 ## 👥 Documentation by role
@@ -106,6 +114,7 @@ Read:
 - [Toolchains](./TOOLCHAINS.md)
 - [Hooks](./HOOKS.md)
 - [Workflows](./WORKFLOWS.md)
+- [Runtime Layer](./RUNTIME.md)
 
 ### Security-conscious teams
 - [Security](./SECURITY.md)
@@ -128,7 +137,7 @@ Read:
 | [WORKFLOWS.md](./WORKFLOWS.md) | Which memory workflows are included in the repository? |
 | [PATTERNS.md](./PATTERNS.md) | Which reusable knowledge and workflow patterns come with Memora? |
 | [SECURITY.md](./SECURITY.md) | How does Memora approach security and memory hygiene? |
-| [RUNTIME.md](./RUNTIME.md) | How does the runtime layer screen memory writes and context files? |
+| [RUNTIME.md](./RUNTIME.md) | How does the runtime layer screen memory writes, manage transcript recall, and connect to toolchain lifecycle events? |
 | [TZ/INDEX.md](./TZ/INDEX.md) | How should runtime bridge integration be implemented across toolchains? |
 | [COMPATIBILITY.md](./COMPATIBILITY.md) | Which provider versions and features are supported? |
 | [MANIFESTO.md](./MANIFESTO.md) | What design philosophy and protocol mindset shape Memora? |

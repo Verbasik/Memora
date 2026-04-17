@@ -3,7 +3,7 @@
 **Purpose:** Document the `lib/runtime/` module — programmatic security screening, frozen session snapshots, and fenced recall context for Memora.
 **Audience:** Maintainers, contributors, toolchain integrators, security reviewers.
 **Read when:** You want to understand how Memora enforces security at the code level, how session snapshots work, or how recalled content is safely fenced before injection.
-**Last updated:** 2026-04-16
+**Last updated:** 2026-04-17
 
 **See also:** [Security](./SECURITY.md) · [Memory Model](./MEMORY_MODEL.md) · [Workflows](./WORKFLOWS.md) · [INDEX.md](./INDEX.md)
 
@@ -21,6 +21,7 @@
 - [Module: provider (Phase 3)](#-module-provider-phase-3)
 - [Module: provider-registry (Phase 3)](#-module-provider-registry-phase-3)
 - [Module: providers/local (Phase 3)](#-module-providerslocal-phase-3)
+- [Module: bridge (Phase 4)](#-module-bridge-phase-4)
 - [Public API (lib/runtime/index.js)](#-public-api-libruntimeindexjs)
 - [Security patterns reference](#-security-patterns-reference)
 - [Usage examples](#-usage-examples)
@@ -58,9 +59,14 @@ lib/runtime/
 ├── provider-registry.js   ← ProviderRegistry orchestrator + failure isolation (Phase 3)
 ├── providers/
 │   └── local.js           ← LocalMemoryProvider built-in (Phase 3)
+├── bridge/
+│   ├── index.js           ← Shared bridge: bootstrapSession(), prepareTurn() (Phase 4)
+│   ├── claude.js          ← Claude Code lifecycle adapter (Phase 4)
+│   └── codex.js           ← Codex CLI lifecycle adapter (Phase 4)
 └── transcript/
     ├── store.js           ← JSONL-backed TranscriptStore (Phase 2, Step 1)
-    └── recall.js          ← Recall pipeline: search → format → fenced block (Phase 2, Step 2)
+    ├── recall.js          ← Recall pipeline: search → format → fenced block (Phase 2, Step 2)
+    └── native-sync.js     ← JSONL transcript sync + deduplication (Phase 4)
 ```
 
 Each module is independently usable. `index.js` re-exports all sub-modules and provides a convenience API covering all three phases.
@@ -526,6 +532,84 @@ Out-of-scope for Phase 3 (inherited no-op defaults): tool schemas, `systemPrompt
 
 ---
 
+## 🌉 Module: bridge (Phase 4)
+
+The bridge layer connects provider lifecycle hooks to the runtime API. It provides a **shared orchestrator** used by all toolchain adapters, plus per-toolchain adapter modules that map hook payloads to orchestrator calls.
+
+Hook entrypoints are wired via `.claude/settings.json` (5 hooks in `.claude/hooks/`) and `.codex/hooks.json` (4 hooks in `.codex/hooks/`).
+
+---
+
+### `bridge/index.js` — shared orchestrator
+
+**File:** `lib/runtime/bridge/index.js`
+
+Toolchain-agnostic orchestration layer called by all provider adapters. Both methods are independent of the specific toolchain.
+
+| Function | Purpose |
+|---|---|
+| `bootstrapSession(opts)` | Called on `SessionStart`; reads context files via `loadContextFile()`, calls `initSession()`, opens a transcript session, optionally initialises providers. Returns `{ additionalContext }`. |
+| `prepareTurn(opts)` | Called on `UserPromptSubmit`; runs `prefetchAll()` and/or `recallTranscripts()`, builds a fenced recall block. Returns `{ additionalContext }`. |
+
+---
+
+### `bridge/claude.js` — Claude Code adapter
+
+**File:** `lib/runtime/bridge/claude.js`
+
+Maps Claude Code lifecycle hook payloads to `bridge/index.js` orchestrator calls.
+
+| Function | Purpose |
+|---|---|
+| `handleSessionStart(payload, deps)` | Maps Claude `SessionStart` payload to `bootstrapSession()`. Returns `{ hookSpecificOutput: { additionalContext } }` or `null`. |
+| `handleUserPromptSubmit(payload, deps)` | Maps Claude `UserPromptSubmit` to `prepareTurn()`. Records the user prompt via `rt.recordTurnUserMessage()`. Returns `{ hookSpecificOutput: { hookEventName, additionalContext } }` or `null`. |
+| `handleStop(payload, deps)` | Maps Claude `Stop`; records `last_assistant_message` via `rt.recordTurnAssistantMessage()`, syncs transcript via `nativeSync.syncFromPath()`. |
+| `handleSessionEnd(payload, deps)` | Maps Claude `SessionEnd`; calls `closeTranscriptSession()`, `onSessionEnd()`, `shutdownAll()` in `try/finally`. |
+
+---
+
+### `bridge/codex.js` — Codex CLI adapter
+
+**File:** `lib/runtime/bridge/codex.js`
+
+Maps Codex CLI lifecycle hook payloads to `bridge/index.js` orchestrator calls.
+
+**Output format note:** Codex adapters return plain text strings (not JSON). Codex `SessionStart` output format and `UserPromptSubmit` return full recall context strings via plain stdout.
+
+| Function | Purpose |
+|---|---|
+| `handleSessionStart(payload, deps)` | Maps Codex `SessionStart`. Returns a plain text string (not JSON). |
+| `handleUserPromptSubmit(payload, deps)` | Maps Codex `UserPromptSubmit`. Returns full recall context string via plain stdout (not JSON). |
+| `handleStop(payload, deps)` | Maps Codex `Stop` as a checkpoint only — **not** `SessionEnd`. Records `last_assistant_message`, syncs `transcript_path` via `nativeSync.syncFromPath()`. Never calls `shutdownAll()`. |
+
+---
+
+### `transcript/native-sync.js` — JSONL transcript sync
+
+**File:** `lib/runtime/transcript/native-sync.js`
+
+Reads provider-native JSONL transcript files and syncs their messages into the `TranscriptStore`, with deduplication to prevent double-recording.
+
+#### Functions
+
+| Function | Purpose |
+|---|---|
+| `syncFromPath(sessionId, transcriptPath, opts)` | Reads a provider's JSONL transcript file, extracts user/assistant messages (supports both Claude and Codex JSONL formats), deduplicates against existing store messages, appends new ones. Returns `{ synced, skipped, diagnostics }`. |
+| `appendMessage(sessionId, role, content, opts)` | Single-message append with deduplication. Returns `{ appended, skipped, diagnostics }`. |
+
+#### Deduplication
+
+Fingerprint = `role + ':' + content.replace(/\s+/g,' ').trim().slice(0,120)`
+
+#### Supported JSONL formats
+
+**Claude JSONL** — `{type:"user"|"assistant", message:{content}, uuid, timestamp}`
+Content can be a string or an array of `{type:"text", text}` blocks.
+
+**Codex JSONL** — `{role:"user"|"assistant", content, id?, timestamp?}`
+
+---
+
 ## 🔌 Public API (`lib/runtime/index.js`)
 
 The `index.js` module re-exports all sub-modules and provides a high-level convenience API covering all three phases.
@@ -682,6 +766,22 @@ Fan-out after a subagent delegation completes.
 
 ---
 
+### Bridge API (Phase 4)
+
+```js
+// runtime.bridge is the shared bridge module
+const { bridge } = runtime;
+bridge.bootstrapSession(opts)   // SessionStart orchestration
+bridge.prepareTurn(opts)        // UserPromptSubmit recall orchestration
+
+// Transcript recording helpers (used by bridge hook scripts)
+runtime.recordTurnUserMessage(sessionId, { content, source })
+runtime.recordTurnAssistantMessage(sessionId, { content, source })
+runtime.closeTranscriptSession(sessionId, meta)
+```
+
+---
+
 ### Low-level sub-module access
 
 ```js
@@ -698,6 +798,10 @@ runtime.transcriptRecall // → { recallTranscripts, formatConversation, ... }
 runtime.provider         // → { MemoryProvider }
 runtime.providerRegistry // → { ProviderRegistry }
 runtime.localProvider    // → { LocalMemoryProvider }
+
+// Phase 4
+runtime.bridge           // → { bootstrapSession, prepareTurn }
+runtime.nativeSync       // → { syncFromPath, appendMessage }
 ```
 
 ---
@@ -898,6 +1002,16 @@ if (hasErrors) console.warn(diagnostics);
 
 **Step 5 — ✅ Shipped:**
 - 135 tests across 4 suites: `provider.test.js` (29 unit), `provider-registry.test.js` (47 unit), `providers/local.test.js` (31 integration), `provider-index.test.js` (28 integration); full failure isolation and end-to-end lifecycle coverage (FR-014, FR-015)
+
+### Phase 4 — ✅ Complete for Claude Code + Codex CLI (2026-04-17)
+
+- `lib/runtime/bridge/index.js` — shared `bootstrapSession()` + `prepareTurn()` orchestrator (FR-001, FR-002, FR-003)
+- `lib/runtime/bridge/claude.js` — Claude Code lifecycle adapter; all 4 hooks: SessionStart, UserPromptSubmit, Stop, SessionEnd (FR-101–FR-104)
+- `lib/runtime/bridge/codex.js` — Codex CLI lifecycle adapter; SessionStart, UserPromptSubmit, Stop checkpoint (FR-201–FR-204)
+- `lib/runtime/transcript/native-sync.js` — JSONL sync with deduplication; supports Claude and Codex JSONL formats
+- Hook entrypoints: 5 scripts in `.claude/hooks/`, 4 scripts in `.codex/hooks/`
+- 297+ tests (native-sync: 19, codex-stop: 15, claude-user-prompt-submit: 11, bridge: existing)
+- **Pending:** Qwen Code (FR-301–FR-304), OpenCode (FR-401–FR-404)
 
 ---
 

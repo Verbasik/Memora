@@ -46,6 +46,7 @@ Thumbs.db
 .env.local
 .env.*.local
 .claude/settings.local.json
+.opencode.json
 
 # Build и dist
 dist/

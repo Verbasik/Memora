@@ -7,7 +7,7 @@
 <p>
   <strong>Structured project memory</strong> ·
   <strong>Progressive context loading</strong> ·
-  <strong>Deterministic maintenance hooks</strong>
+  <strong>Runtime bridge integration</strong>
 </p>
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](./LICENSE)
@@ -52,7 +52,7 @@ Instead of relying on one large prompt or an ever-growing context window, Memora
 - a routing layer for minimal relevant context,
 - canonical knowledge files for architecture, decisions, conventions, and testing,
 - isolated session state for ongoing work,
-- maintenance hooks that keep memory workflows visible and predictable.
+- a runtime bridge that automatically wires each agent's lifecycle events to session recall, transcript capture, and memory screening.
 
 Memora is especially useful when AI agents work on the same codebase across many sessions and need more than ad-hoc prompting.
 
@@ -60,7 +60,7 @@ Memora is especially useful when AI agents work on the same codebase across many
 
 ## ✨ What Memora Provides Today
 
-Memora delivers a **production-ready foundation** for structured project memory:
+Memora delivers a **production-ready foundation** for structured project memory with a fully-integrated runtime layer:
 
 ### Core Features
 
@@ -76,8 +76,11 @@ Memora delivers a **production-ready foundation** for structured project memory:
 | 🔔 **Advisory Hooks** | Deterministic reminders for reflection, consolidation, cleanup |
 | 🔌 **Multi-Toolchain Support** | Native adapters for Claude Code, Codex CLI, Qwen Code, OpenCode |
 | 🔒 **Runtime Security Layer** | Programmatic screening of memory writes and context file injection against prompt injection, exfiltration, and invisible Unicode attacks |
+| 💾 **Transcript Recall Layer** | Persistent turn-by-turn transcript store with cross-session search and fenced recall blocks injected automatically at each turn |
+| ⚙️ **Provider Lifecycle Layer** | `MemoryProvider` base class + `ProviderRegistry` orchestrator with failure isolation, fan-out hooks, and built-in `LocalMemoryProvider` |
+| 🌉 **Runtime Bridge Integration** | Native lifecycle hooks for Claude Code (complete) and Codex CLI (complete) — session bootstrap, pre-turn recall, write gate, finalization wired automatically |
 
-**Bottom line:** Memora gives you **structure, validation, repeatable workflows, and runtime security** out of the box.
+**Bottom line:** Memora gives you **structure, validation, repeatable workflows, runtime security, and automatic session recall** out of the box.
 
 ---
 
@@ -127,7 +130,7 @@ Deterministic workflows for **reproducible agent behavior**:
 **One memory-bank, multiple AI agents**:
 
 - Same structure works with Claude Code, Codex CLI, Qwen Code, OpenCode
-- Toolchain-specific adapters (`.claude/`, `.agents/`, `.qwen/`, `.opencode/`)
+- Toolchain-specific adapters (`.claude/`, `.codex/`, `.qwen/`, `.opencode/`)
 - Unified workflow across teams
 
 ### 6. 🔒 Runtime Security Layer
@@ -141,6 +144,17 @@ Deterministic workflows for **reproducible agent behavior**:
 
 See [Runtime Layer](./docs/RUNTIME.md) for full API reference.
 
+### 7. 🌉 Runtime Bridge Integration
+
+**Automatic lifecycle wiring for each toolchain**:
+
+- **Session bootstrap** — on `SessionStart`, Memora initialises the runtime, reads frozen context files, opens a transcript session
+- **Pre-turn recall** — on `UserPromptSubmit`, relevant past sessions are retrieved and injected as background context before the model responds
+- **Write gate** — on `PreToolUse`/`PostToolUse`, every canonical memory write is screened and observed by the runtime
+- **Finalization** — on `SessionEnd`, the runtime flushes transcript state and shuts down providers cleanly
+
+All bridge logic lives in a shared `lib/runtime/bridge/` module; each toolchain adapter is a thin hook that delegates to it.
+
 ---
 
 ## 🔄 How Memora Works
@@ -150,26 +164,34 @@ Memora follows a **simple, repeatable workflow**:
 ```
 ┌─────────────────────────────────────────────────────┐
 │ 1. Agent starts session                             │
-│    └─> Reads: AGENTS.md (entry point)               │
+│    └─> SessionStart hook fires                      │
+│    └─> Runtime bootstrap: frozen snapshot, session  │
+│        opened, startup context injected             │
 ├─────────────────────────────────────────────────────┤
-│ 2. Load context                                     │
-│    └─> Checks: memory-bank/INDEX.md (routing)       │
-│    └─> Reads: Only relevant files (via routing)     │
+│ 2. User sends prompt                                │
+│    └─> UserPromptSubmit hook fires                  │
+│    └─> Transcript recall: relevant past sessions    │
+│        injected as background context               │
 ├─────────────────────────────────────────────────────┤
-│ 3. Work on task                                     │
-│    └─> Solves problem, writes code, creates docs    │
+│ 3. Agent works on task                              │
+│    └─> PreToolUse/PostToolUse: canonical writes     │
+│        are screened and observed                    │
 ├─────────────────────────────────────────────────────┤
 │ 4. Update memory                                    │
 │    └─> Updates: CURRENT.md, HANDOFF.md              │
-│    └─> Runs: Advisory hooks (reflect, consolidate)  │
+│    └─> Advisory hooks run (reflect, consolidate)    │
+├─────────────────────────────────────────────────────┤
+│ 5. Session ends                                     │
+│    └─> SessionEnd / Stop hook fires                 │
+│    └─> Transcript flushed, providers shut down      │
 └─────────────────────────────────────────────────────┘
 ```
 
 ### Three Practical Benefits
 
-✅ **Less context noise** — Load only what you need
-✅ **Better session continuity** — Handoff files bridge gaps
-✅ **Clean separation** — Stable knowledge vs. active work
+✅ **Less context noise** — Load only what you need  
+✅ **Better session continuity** — Recall from past sessions, not just handoff files  
+✅ **Clean separation** — Canonical memory vs. runtime transcript recall
 
 ---
 
@@ -260,10 +282,10 @@ See [Project.md template](./memory-bank/PROJECT.md) for detailed guidance.
 
 Memora supports multiple AI coding agents. Choose your toolchain:
 
-- 🔵 **Claude Code** — Native integration via `.claude/` adapter
-- ⚙️ **Codex CLI** — Standalone CLI mode
-- 🟠 **Qwen Code** — Alibaba Qwen integration
-- 🟣 **OpenCode** — OpenAI Code integration
+- 🔵 **Claude Code** — Full runtime bridge integration (session recall, write gate, finalization)
+- ⚙️ **Codex CLI** — Runtime bridge integration (session recall, Bash guard, Stop checkpoint)
+- 🟠 **Qwen Code** — Adapter and advisory hooks (runtime bridge coming next)
+- 🟣 **OpenCode** — Adapter and plugin triggers (runtime bridge planned)
 
 Adapters and hooks are automatically copied by `memora init` from `scaffold.manifest.json`.
 
@@ -314,16 +336,29 @@ Once your memory-bank is initialized:
 
 ## 🌐 Compatibility Snapshot
 
-Memora works seamlessly across **all major AI coding agents**:
+### Adapter & workflow support
 
 | Component | Claude Code | Codex CLI | Qwen Code | OpenCode |
 |-----------|:-----------:|:---------:|:---------:|:--------:|
 | Adapter files | ✅ | ✅ | ✅ | ✅ |
-| Hook integration | ✅ | ✅ | ✅ | ✅ |
-| Workflow docs | ✅ | ✅ | ✅ | ✅ |
+| Workflow docs (skills/commands) | ✅ | ✅ | ✅ | ✅ |
+| Advisory hooks | ✅ | ✅ | ✅ | ✅ |
 | Shared memory-bank | ✅ | ✅ | ✅ | ✅ |
 
-**Key advantage:** **One unified memory-bank architecture works across all toolchains** — no reimplementation needed.
+### Runtime bridge integration
+
+| Bridge capability | Claude Code | Codex CLI | Qwen Code | OpenCode |
+|-------------------|:-----------:|:---------:|:---------:|:--------:|
+| Session bootstrap (`SessionStart`) | ✅ | ✅ | 🔜 | 🔜 |
+| Pre-turn recall (`UserPromptSubmit`) | ✅ | ✅ | 🔜 | 🔜 |
+| Canonical write gate (`PreToolUse`) | ✅ | ✅ | 🔜 | 🔜 |
+| Session finalization (`SessionEnd`) | ✅ | ⚠️ ¹ | 🔜 | 🔜 |
+| Transcript capture (turn-scoped) | ✅ | ✅ | 🔜 | 🔜 |
+
+> ¹ Codex CLI has no native `SessionEnd` — `Stop` is used as a turn-level checkpoint. Hard-close semantics remain an architectural gap (FR-205).  
+> 🔜 Planned in next implementation phase (FR-301–FR-304 for Qwen, FR-401–FR-404 for OpenCode).
+
+**Key advantage:** **One unified memory-bank architecture and shared bridge layer across all toolchains** — no reimplementation needed per provider.
 
 ---
 
@@ -333,6 +368,10 @@ Memora is **actively developed**. The roadmap builds on our solid foundation:
 
 ### Recently Shipped
 
+- ✅ **Runtime Bridge — Claude Code complete (FR-101–FR-104)** — Native lifecycle hooks: `SessionStart` bootstrap, `UserPromptSubmit` pre-turn recall, `PreToolUse`/`PostToolUse` write gate, `SessionEnd` finalization. Verified in live sessions with 395-message transcript recall.
+- ✅ **Runtime Bridge — Codex CLI complete (FR-201–FR-204)** — `SessionStart` bootstrap, `UserPromptSubmit` with staged context injection (suppresses terminal wall-of-text), `PreToolUse` Bash guard, `Stop` checkpoint. Hooks delivered via `.codex/hooks.json`.
+- ✅ **Shared bridge layer (FR-001)** — `lib/runtime/bridge/index.js` — common `bootstrapSession()` / `prepareTurn()` orchestration used by all toolchain adapters.
+- ✅ **Turn-scoped transcript capture (T-102/T-203)** — `UserPromptSubmit` records user prompts; `Stop` syncs assistant messages; `SessionEnd` closes sessions. Recall pipeline now populated on every turn.
 - ✅ **Provider Lifecycle Layer complete (Phase 3)** — `MemoryProvider` base class + `ProviderRegistry` orchestrator (failure isolation, fan-out hooks) + `LocalMemoryProvider` built-in (wraps TranscriptStore) + public API (`getProviderRegistry`, `onTurnStart`, `onSessionEnd`, `onPreCompress`, `onMemoryWrite`, `onDelegation`) + 135 tests (FR-014, FR-015)
 - ✅ **Transcript Recall Layer complete (Phase 2)** — full pipeline: `TranscriptStore` (JSONL, atomic writes) → `recall.js` (format + truncate + fenced block) → `lib/runtime/index.js` public API (`openTranscriptSession`, `appendTranscriptMessage`, `recallTranscripts`) → 28 integration tests (FR-002, FR-006, FR-007, FR-009, FR-010, FR-011, FR-016)
 - ✅ **Runtime security layer (Phase 1)** — `lib/runtime/`: security screening, frozen snapshots, fenced recall blocks (134 tests)
@@ -341,12 +380,12 @@ Memora is **actively developed**. The roadmap builds on our solid foundation:
 
 ### Current Focus (Q2 2026)
 
-- 🛠️ **Install diagnostics** — Better `memora doctor` output
-- 🤖 **Memory automation** — Smart consolidation and cleanup helpers
+- 🛠️ **Runtime Bridge — Qwen Code (FR-301–FR-304)** — `lib/runtime/bridge/qwen.js` + native hooks: `SessionStart`, `UserPromptSubmit`, `PreToolUse`/`PostToolUse`, `SessionEnd`
+- 🛠️ **Runtime Bridge — OpenCode (FR-401–FR-404)** — `MemoraRuntimePlugin` in `.opencode/plugins/`: `session.created`, `chat.message`, `tool.execute.before/after`, `session.deleted`
 
 ### Coming Soon
 
-- 🔧 **Adapter enhancements** — Deeper integration for each toolchain
+- 🔧 **Codex hard-close semantics (FR-205)** — architectural gap: no native `SessionEnd` in Codex, strategy TBD
 - 📊 **Observability tooling** — Better audit trails and diagnostics
 - 🔌 **External provider backends** — Optional Honcho / Hindsight provider plugins
 

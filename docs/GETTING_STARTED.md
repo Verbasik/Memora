@@ -3,7 +3,7 @@
 **Purpose:** Help you get Memora running in a project quickly.  
 **Audience:** First-time users and evaluators.  
 **Read when:** You want a practical setup path with the fewest decisions.  
-**Last updated:** 2026-04-03
+**Last updated:** 2026-04-17
 
 **See also:** [INDEX.md](./INDEX.md) · [CLI Reference](./CLI.md) · [Toolchains](./TOOLCHAINS.md) · [Workflows](./WORKFLOWS.md)
 
@@ -34,6 +34,7 @@ After completing this guide, you will have:
 - core memory files ready to fill,
 - front-matter validation working locally,
 - an operational health check through `memora doctor`,
+- runtime lifecycle hooks automatically wired for Claude Code and Codex CLI (session recall, write gate, finalization),
 - a clear path to connect your preferred AI toolchain.
 
 ---
@@ -158,25 +159,31 @@ These files are the best way to understand how a toolchain or agent should enter
 Memora already includes toolchain-specific adapters.
 
 ### Claude Code
+Full runtime bridge integration (session bootstrap, automatic recall, write gate, session finalization).  
 Review:
 
 - `CLAUDE.md`
 - `.claude/settings.json`
 - `.claude/skills/`
+- `.claude/hooks/` — SessionStart, UserPromptSubmit, PreToolUse/PostToolUse, SessionEnd hooks
 
 ### Codex CLI
+Runtime bridge integration (session bootstrap, automatic recall, Bash guard, Stop checkpoint).  
 Review:
 
 - `.codex/config.toml`
 - `.codex/skills/`
+- `.codex/hooks/` — hooks wired via `.codex/hooks.json`
 
 ### Qwen Code
+Adapter and advisory hooks (runtime bridge planned in next phase).  
 Review:
 
 - `.qwen/settings.json`
 - `.qwen/agents/`
 
 ### OpenCode
+Adapter and trigger plugins (runtime bridge planned in next phase).  
 Review:
 
 - `.opencode/plugins/`

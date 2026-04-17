@@ -3,7 +3,7 @@
 **Purpose:** Explain how Memora integrates with supported AI coding environments.  
 **Audience:** Users choosing a toolchain, maintainers, integrators.  
 **Read when:** You want to connect Memora to Claude Code, Codex CLI, Qwen Code, or OpenCode.  
-**Last updated:** 2026-04-03
+**Last updated:** 2026-04-17
 
 **See also:** [Hooks](./HOOKS.md) · [Workflows](./WORKFLOWS.md) · [Getting Started](./GETTING_STARTED.md) · [INDEX.md](./INDEX.md)
 
@@ -64,11 +64,16 @@ What changes per environment is the **adapter layer**:
 - `CLAUDE.md`
 - `.claude/settings.json`
 - `.claude/skills/`
+- `.claude/hooks/` (`session-start.js`, `user-prompt-submit.js`, `pre-tool-use.js`, `post-tool-use.js`, `session-end.js`)
 
 ### Claude capabilities
 
 - a Claude-specific entry point,
-- hook integration,
+- full runtime bridge integration (FR-101–FR-104):
+  - session bootstrap on `SessionStart` (frozen snapshot, transcript session open),
+  - pre-turn recall on `UserPromptSubmit` (past sessions injected as context),
+  - canonical write gate on `PreToolUse`/`PostToolUse` (security screening + audit),
+  - session finalization on `SessionEnd` (`onSessionEnd()` + `shutdownAll()`),
 - workflow documents in the Claude skills format,
 - a clean path into the shared memory-bank.
 
@@ -87,14 +92,20 @@ Choose Claude Code when you want:
 ### Codex adapter assets
 
 - `.codex/config.toml`
+- `.codex/hooks.json`
 - `.agents/skills/`
 - `.codex/skills/`
+- `.codex/hooks/` (`session-start.js`, `user-prompt-submit.js`, `pre-tool-use.js`, `stop-checkpoint.js`)
 
 ### Codex capabilities
 
 - Codex-specific project configuration,
 - a resolved `.agents/skills/` discovery path for Codex CLI,
-- stop-hook integration via wrapper script,
+- runtime bridge integration (FR-201–FR-204):
+  - session bootstrap on `SessionStart`,
+  - pre-turn recall on `UserPromptSubmit` (staged to file, brief reference on stdout),
+  - Bash command guard on `PreToolUse` (exit 2 blocks canonical memory writes),
+  - `Stop` checkpoint after each turn (not true `SessionEnd` — FR-205 architectural gap),
 - workflow documents adapted to the Codex layer.
 
 ### When to choose Codex CLI
@@ -118,7 +129,7 @@ Choose Codex CLI when you want:
 
 - Qwen-specific settings for project context,
 - a single canonical entry file: `AGENTS.md`,
-- hook integration,
+- hook integration (advisory Stop hooks only — runtime bridge hooks FR-301–FR-304 are planned but not yet implemented),
 - workflow files adapted to the Qwen agent layer.
 
 ### When to choose Qwen Code
@@ -140,7 +151,7 @@ Choose Qwen Code when you want:
 
 ### 🟣 OpenCode capabilities
 
-- plugin-based hook integration,
+- plugin-based hook integration (3 trigger plugins; runtime bridge plugin FR-401–FR-404 is planned but not yet implemented),
 - command-style workflow files,
 - a modular adapter surface around the same shared memory-bank.
 
@@ -163,8 +174,9 @@ Choose OpenCode when you want:
 | Hook integration | ✅ | ✅ ¹ | ✅ | ✅ ² |
 | Hard guardrail enforcement | ✅ | ⚠️ ³ | ⚠️ ⁴ | ⚠️ ³ |
 | Shared memory-bank model | ✅ | ✅ | ✅ | ✅ |
+| Runtime bridge hooks | ✅ | ✅ ⁵ | 🔜 | 🔜 |
 
-**Legend:** ✅ supported · ⚠️ advisory-only or partial (see notes below)
+**Legend:** ✅ supported · ⚠️ advisory-only or partial · 🔜 planned (see notes below)
 
 > ¹ **Codex:** Hook support is experimental (added in Codex CLI v0.114.0). A single `[hooks.Stop]` entry is supported via a wrapper script. Hook format may change in future Codex releases.
 >
@@ -173,6 +185,8 @@ Choose OpenCode when you want:
 > ³ **Codex / OpenCode:** No native deny/ignore enforcement configuration. Secret and PII protection is advisory-only, provided through workflow guidance and `memory-bank/POLICIES/`. See [Security](./SECURITY.md) for compensating controls.
 >
 > ⁴ **Qwen:** Partial enforcement via `.qwen/settings.qwenignore`. No deny-list equivalent to Claude Code’s `permissions.deny`.
+>
+> ⁵ **Codex CLI runtime bridge complete** (SessionStart, UserPromptSubmit, PreToolUse, Stop checkpoint). FR-205: no native SessionEnd — Stop is checkpoint only.
 
 The architecture is shared, the adapters are toolchain-specific. Parity is verified at the adapter layer; native enforcement capabilities differ between providers.
 
@@ -203,10 +217,10 @@ Claude Code implements `memory-explorer` as a sub-agent (`.claude/agents/`) rath
 A practical way to choose:
 
 ### Choose Claude Code if
-you want a direct project-skill setup with clear entry-point files.
+you want a direct project-skill setup with clear entry-point files and full runtime bridge integration (session bootstrap, pre-turn recall, write gate, session finalization).
 
 ### Choose Codex CLI if
-you prefer a compact CLI-centric environment.
+you prefer a compact CLI-centric environment with runtime bridge hooks (SessionStart, UserPromptSubmit, PreToolUse, Stop checkpoint) and can accept the FR-205 architectural gap (no native SessionEnd).
 
 ### Choose Qwen Code if
 you want a settings-and-agents pattern similar to Claude-style project integration.
