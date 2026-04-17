@@ -3,10 +3,17 @@
 
 const { handleSessionStart } = require('../../lib/runtime/bridge/codex');
 
+const VERBOSE = process.env.MEMORA_VERBOSE === '1';
+function _log(hook, msg) { process.stderr.write(`[memora:${hook}] ${msg}\n`); }
+
 async function main() {
   const rawInput = await _readStdin();
   const payload = rawInput.trim() ? JSON.parse(rawInput) : {};
-  const { output } = handleSessionStart(payload);
+  const { output, result } = handleSessionStart(payload);
+
+  const files = result && result.contextEntries ? result.contextEntries.length : 0;
+  const chars = output && output.additional_context ? output.additional_context.length : 0;
+  _log('SessionStart', `session=${payload.session_id} files=${files} injected=${chars}chars`);
 
   if (output) {
     process.stdout.write(JSON.stringify(output) + '\n');

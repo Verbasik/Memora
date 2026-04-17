@@ -3,14 +3,21 @@
 
 const { handlePreToolUse } = require('../../lib/runtime/bridge/codex');
 
+const VERBOSE = process.env.MEMORA_VERBOSE === '1';
+function _log(hook, msg) { process.stderr.write(`[memora:${hook}] ${msg}\n`); }
+
 async function main() {
   const rawInput = await _readStdin();
   const payload = rawInput.trim() ? JSON.parse(rawInput) : {};
   const result = handlePreToolUse(payload);
 
   if (result && result.blocked) {
-    process.stderr.write(`[memora-runtime] ${result.reason}\n`);
+    // Always log blocks
+    _log('PreToolUse', `✗ BLOCKED Bash — ${result.reason}`);
     process.exit(2);
+  } else if (VERBOSE) {
+    const cmd = ((payload.tool_input && payload.tool_input.command) || '').slice(0, 60);
+    if (cmd) _log('PreToolUse', `✓ allowed Bash: ${cmd}`);
   }
 }
 

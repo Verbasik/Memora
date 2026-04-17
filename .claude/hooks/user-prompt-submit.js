@@ -3,10 +3,23 @@
 
 const { handleUserPromptSubmit } = require('../../lib/runtime/bridge/claude');
 
+const VERBOSE = process.env.MEMORA_VERBOSE === '1';
+function _log(hook, msg) { process.stderr.write(`[memora:${hook}] ${msg}\n`); }
+
 async function main() {
   const rawInput = await _readStdin();
   const payload = rawInput.trim() ? JSON.parse(rawInput) : {};
   const output = handleUserPromptSubmit(payload);
+
+  const chars = output && output.hookSpecificOutput
+    ? (output.hookSpecificOutput.additionalContext || '').length
+    : 0;
+
+  if (chars > 0) {
+    _log('UserPromptSubmit', `recall=${chars}chars injected`);
+  } else if (VERBOSE) {
+    _log('UserPromptSubmit', 'recall empty — no history yet');
+  }
 
   if (output) {
     process.stdout.write(JSON.stringify(output) + '\n');
