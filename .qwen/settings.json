@@ -5,6 +5,71 @@
     ]
   },
   "hooks": {
+    "SessionStart": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"$(git rev-parse --show-toplevel)/.qwen/hooks/session-start.js\"",
+            "name": "memora-runtime-bootstrap",
+            "timeout": 30000
+          }
+        ]
+      }
+    ],
+    "UserPromptSubmit": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"$(git rev-parse --show-toplevel)/.qwen/hooks/user-prompt-submit.js\"",
+            "name": "memora-runtime-recall",
+            "timeout": 15000
+          }
+        ]
+      }
+    ],
+    "PreToolUse": [
+      {
+        "matcher": "Write|Edit|MultiEdit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"$(git rev-parse --show-toplevel)/.qwen/hooks/pre-tool-use.js\"",
+            "name": "memora-write-gate",
+            "timeout": 10000
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Write|Edit|MultiEdit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"$(git rev-parse --show-toplevel)/.qwen/hooks/post-tool-use.js\"",
+            "name": "memora-write-observer",
+            "timeout": 10000
+          }
+        ]
+      }
+    ],
+    "SessionEnd": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"$(git rev-parse --show-toplevel)/.qwen/hooks/session-end.js\"",
+            "name": "memora-runtime-finalize",
+            "timeout": 30000
+          }
+        ]
+      }
+    ],
     "Stop": [
       {
         "matcher": "",
@@ -25,5 +90,5 @@
       }
     ]
   },
-  "$version": 3
+  "$version": 4
 }
