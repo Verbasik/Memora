@@ -1,8 +1,18 @@
 #!/usr/bin/env node
 'use strict';
 
+const path = require('path');
+const fs   = require('fs');
+
 const { handleSessionStart } = require('../../lib/runtime/bridge/codex');
-const { log } = require('../../lib/runtime/hook-logger');
+const { log, debug } = require('../../lib/runtime/hook-logger');
+
+/**
+ * Codex always renders SessionStart stdout as "hook context:" in the TUI.
+ * Stage the full bootstrap context to a file and emit only a short reference
+ * so the session does not begin with a terminal-sized wall of text.
+ */
+const BOOTSTRAP_FILE = 'memory-bank/.local/ACTIVE_BOOTSTRAP.md';
 
 async function main() {
   const rawInput = await _readStdin();
@@ -10,13 +20,30 @@ async function main() {
   const { output, result } = handleSessionStart(payload);
 
   const files = result && result.contextEntries ? result.contextEntries.length : 0;
-  const chars = typeof output === 'string' ? output.length : 0;
-  log('SessionStart', `session=${payload.session_id} files=${files} injected=${chars}chars`);
-
-  // SessionStart output is plain text (matches UserPromptSubmit convention).
-  if (output) {
-    process.stdout.write(output + '\n');
+  if (!output) {
+    debug('SessionStart', `session=${payload.session_id || 'unknown'} files=${files} injected=0chars`);
+    return;
   }
+
+  const projectDir = path.resolve((payload && payload.cwd) || process.cwd());
+  const bootstrapPath = path.join(projectDir, BOOTSTRAP_FILE);
+
+  try {
+    fs.mkdirSync(path.dirname(bootstrapPath), { recursive: true });
+    fs.writeFileSync(bootstrapPath, output, 'utf8');
+  } catch (err) {
+    log('SessionStart', `session=${payload.session_id} files=${files} staging failed (${err.message}), falling back to inline`);
+    process.stdout.write(output + '\n');
+    return;
+  }
+
+  log('SessionStart', `session=${payload.session_id} files=${files} staged=${output.length}chars → ${BOOTSTRAP_FILE}`);
+
+  // Do NOT start stdout with '[' or '{' — Codex may attempt JSON parsing.
+  const brief =
+    `Memora bootstrap: startup context ready — see \`${BOOTSTRAP_FILE}\` if project state is relevant.`;
+
+  process.stdout.write(brief + '\n');
 }
 
 function _readStdin() {

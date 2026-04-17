@@ -7,7 +7,7 @@
           {
             "type": "command",
             "command": "node \"$(git rev-parse --show-toplevel)/.codex/hooks/session-start.js\"",
-            "statusMessage": "Loading Memora context"
+            "statusMessage": "Staging startup context"
           }
         ]
       }
