@@ -1,12 +1,13 @@
 
 # Codex CLI — проектная конфигурация
-# Активация hooks: codex --enable codex_hooks  (v0.121.0+, feature=under development)
-# Или глобально:   codex features enable codex_hooks
-
-# ── Feature flags ──────────────────────────────────────
-# codex_hooks по умолчанию выключен; включаем на уровне проекта.
-[features]
-codex_hooks = true
+#
+# Для работы hooks требуется однократная глобальная активация:
+#   codex features enable codex_hooks
+#
+# Feature flags читаются только из ~/.codex/config.toml.
+# [features] в project-config Codex игнорирует.
+# Проект уже помечен trusted в ~/.codex/config.toml автоматически
+# (аналог --trust-project из старых версий).
 
 [project]
 sandbox = "workspace-write"
