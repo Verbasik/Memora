@@ -45,7 +45,7 @@
 
 | ID | Кратко | Покрытие официальными примерами | Статус реализации | Основание |
 |---|---|---|---|---|
-| FR-201 | Native bootstrap через `SessionStart` | Полное | Не начато | source-backed example есть, адаптер в коде ещё не добавлен |
+| FR-201 | Native bootstrap через `SessionStart` | Полное | Реализовано | `lib/runtime/bridge/codex.js`, `.codex/hooks/session-start.js`, `test/runtime/codex-session-start.test.js`; output: `{ additional_context }` (snake_case) |
 | FR-202 | Pre-turn recall через `UserPromptSubmit` | Полное | Не начато | plain-stdout example зафиксирован в ТЗ |
 | FR-203 | `PreToolUse` / `PostToolUse` не универсальны | Частичное | Не начато | provider shape ясен, но Memora explicit helper остаётся собственной адаптацией |
 | FR-204 | `Stop` как checkpoint, не true close | Полное | Не начато | source-backed example есть, wiring нет |
@@ -80,7 +80,7 @@
 - `SessionEnd` finalization ✅
 
 **Следующие в очереди:**
-- Codex CLI: FR-201–FR-204 (SessionStart, UserPromptSubmit, Stop-checkpoint, write helper)
+- Codex CLI: FR-202–FR-204 (UserPromptSubmit, Stop-checkpoint, write helper)
 - Qwen Code: FR-301–FR-304
 - OpenCode: FR-401–FR-404
 
