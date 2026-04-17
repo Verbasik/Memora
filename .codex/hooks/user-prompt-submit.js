@@ -54,7 +54,9 @@ async function main() {
 
   // Brief one-liner: shown in terminal AND injected as minimal context for the model.
   const noun  = sessions === 1 ? 'session' : 'sessions';
-  const brief = `[Memora Recall] ${sessions} ${noun} matched — read \`${RECALL_FILE}\` for context.`;
+  // Do NOT start the string with '[' or '{' — Codex tries to JSON-parse any stdout
+  // that opens with those characters and reports "invalid user prompt submit JSON output".
+  const brief = `Memora recall: ${sessions} ${noun} matched — see \`${RECALL_FILE}\` for context.`;
 
   process.stdout.write(brief + '\n');
 }
