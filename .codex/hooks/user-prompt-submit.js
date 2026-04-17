@@ -2,9 +2,7 @@
 'use strict';
 
 const { handleUserPromptSubmit } = require('../../lib/runtime/bridge/codex');
-
-const VERBOSE = process.env.MEMORA_VERBOSE === '1';
-function _log(hook, msg) { process.stderr.write(`[memora:${hook}] ${msg}\n`); }
+const { log, debug } = require('../../lib/runtime/hook-logger');
 
 async function main() {
   const rawInput = await _readStdin();
@@ -13,9 +11,9 @@ async function main() {
 
   const chars = text ? text.length : 0;
   if (chars > 0) {
-    _log('UserPromptSubmit', `recall=${chars}chars injected`);
-  } else if (VERBOSE) {
-    _log('UserPromptSubmit', 'recall empty — no history yet');
+    log('UserPromptSubmit', `recall=${chars}chars injected`);
+  } else {
+    debug('UserPromptSubmit', 'recall empty — no history yet');
   }
 
   // Codex UserPromptSubmit expects plain text on stdout, not JSON.
