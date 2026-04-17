@@ -26,6 +26,17 @@
         ]
       }
     ],
+    "UserPromptSubmit": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"$(git rev-parse --show-toplevel)/.claude/hooks/user-prompt-submit.js\""
+          }
+        ]
+      }
+    ],
     "Stop": [
       {
         "matcher": "",
