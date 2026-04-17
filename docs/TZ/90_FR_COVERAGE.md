@@ -64,14 +64,14 @@
 
 | ID | Кратко | Покрытие официальными примерами | Статус реализации | Основание |
 |---|---|---|---|---|
-| FR-401 | Native plugin bridge | Полное | Не начато | examples для `session.created`, `tool.execute.before`, `session.deleted` есть |
-| FR-402 | Pre-turn recall через `chat.message` | Полное | Не начато | example есть, system-transform отделён отдельно |
-| FR-403 | True close через `session.deleted` | Полное | Не начато | example есть, `session.idle` исключён как finalizer |
-| FR-404 | `session.status` primary, `session.idle` legacy | Полное | Не начато | examples для `session.status` и legacy `session.idle` есть |
+| FR-401 | Native plugin bridge | Полное | Частично | `lib/runtime/bridge/opencode.js` → `handleSessionCreated()`; plugin entrypoint `.opencode/plugins/runtime-bridge.js` — следующий патч |
+| FR-402 | Pre-turn recall через `chat.message` | Полное | Частично | `lib/runtime/bridge/opencode.js` → `handleChatMessage()`; plugin entrypoint — следующий патч |
+| FR-403 | True close через `session.deleted` | Полное | Частично | `lib/runtime/bridge/opencode.js` → `handleSessionDeleted()` с `onSessionEnd()` + `shutdownAll()`; `session.idle` явно excluded как finalizer |
+| FR-404 | `session.status` primary, `session.idle` legacy | Полное | Частично | `lib/runtime/bridge/opencode.js` → `handleToolExecuteBefore/After()`, `handleSessionCompacting()`, `handleSessionStatus()`; plugin entrypoint — следующий патч |
 
 ## Вывод
 
-### Статус по состоянию на 2026-04-17 (обновлено после feat/qwen-hook-entrypoints)
+### Статус по состоянию на 2026-04-17 (обновлено после feat/opencode-bridge-module)
 
 **Claude Code — полностью завершён (FR-101–FR-104):**
 - `SessionStart` bootstrap ✅
@@ -102,8 +102,13 @@
 - `SessionEnd` true finalization ✅ (onSessionEnd + shutdownAll — нет пробела FR-205)
 - `test/runtime/qwen-bridge.test.js` ✅ (33 кейса)
 
+**OpenCode — bridge-модуль реализован, plugin entrypoint — следующий патч (FR-401–FR-404):**
+- `lib/runtime/bridge/opencode.js` ✅ (7 handlers: SessionCreated, ChatMessage, ToolExecuteBefore/After, SessionCompacting, SessionDeleted, SessionStatus)
+- `test/runtime/opencode-bridge.test.js` ✅ (35 кейсов)
+- `.opencode/plugins/runtime-bridge.js` 🔜 (ESM plugin entrypoint, следующий патч)
+
 **Следующие в очереди:**
-- OpenCode: FR-401–FR-404
+- OpenCode: `.opencode/plugins/runtime-bridge.js` ESM plugin entrypoint
 
 **Открытые архитектурные вопросы:**
 - FR-205: hard-close semantics для Codex CLI (нет native `SessionEnd`)
