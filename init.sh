@@ -268,6 +268,19 @@ fi
 # ── .claudeignore ──────────────────────────────────────────────────────────────
 [ -f .claudeignore ] || printf '.env\n.env.*\n*.key\n*.pem\n*.p12\n**/secrets/\n**/credentials/\n' > .claudeignore
 
+# ── Codex hooks feature flag ───────────────────────────────────────────────────
+# codex_hooks defaults to false and is only read from ~/.codex/config.toml.
+# We enable it here once so Codex hooks fire without any manual user step.
+CODEX_HOOKS_ACTIVATED="no"
+if command -v codex >/dev/null 2>&1; then
+  GLOBAL_CODEX_CFG="$HOME/.codex/config.toml"
+  if [ -f "$GLOBAL_CODEX_CFG" ] && grep -q 'codex_hooks\s*=\s*true' "$GLOBAL_CODEX_CFG" 2>/dev/null; then
+    CODEX_HOOKS_ACTIVATED="already"
+  elif codex features enable codex_hooks >/dev/null 2>&1; then
+    CODEX_HOOKS_ACTIVATED="yes"
+  fi
+fi
+
 echo ""
 echo "✓ Memora scaffold initialized."
 echo ""
@@ -275,6 +288,13 @@ if [ "$HOOKS_ACTIVATED" = "yes" ]; then
   echo "✓ Git hooks activated via core.hooksPath=.githooks"
 else
   echo "⚠ Git hooks not activated automatically (run: git config core.hooksPath .githooks)"
+fi
+if [ "$CODEX_HOOKS_ACTIVATED" = "yes" ]; then
+  echo "✓ Codex hooks enabled in ~/.codex/config.toml"
+elif [ "$CODEX_HOOKS_ACTIVATED" = "already" ]; then
+  echo "✓ Codex hooks already enabled — skipped"
+elif command -v codex >/dev/null 2>&1; then
+  echo "⚠ Codex hooks not enabled automatically (run: codex features enable codex_hooks)"
 fi
 echo ""
 echo "Next steps:"
