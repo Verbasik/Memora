@@ -19,6 +19,9 @@ project_doc_fallback_filenames = ["CLAUDE.md"]
 #   2. check-consolidate-trigger.sh (CONSOLIDATE_THRESHOLD, default: 5)
 #   3. check-gc-trigger.sh          (GC_THRESHOLD,          default: 20)
 
+[hooks.SessionStart]
+command = "node \"$(git rev-parse --show-toplevel)/.codex/hooks/session-start.js\""
+
 [hooks.Stop]
 command = "bash \"$(git rev-parse --show-toplevel)/memory-bank/scripts/run-stop-hooks.sh\""
 
