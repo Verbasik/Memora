@@ -55,10 +55,10 @@
 
 | ID | Кратко | Покрытие официальными примерами | Статус реализации | Основание |
 |---|---|---|---|---|
-| FR-301 | Native bootstrap через `SessionStart` | Полное | Не начато | пример и event contract есть |
-| FR-302 | Pre-turn recall через `UserPromptSubmit` | Полное | Не начато | пример и `hookSpecificOutput.additionalContext` есть |
-| FR-303 | Finalization через `SessionEnd` | Полное | Не начато | пример и lifecycle event есть |
-| FR-304 | Write interception через `PreToolUse` / `PostToolUse` | Полное | Не начато | примеры `PreToolUse`, `PostToolUse`, `PostToolUseFailure` есть |
+| FR-301 | Native bootstrap через `SessionStart` | Полное | Частично | `lib/runtime/bridge/qwen.js` → `handleSessionStart()`; hook entrypoints и `.qwen/settings.json` — следующий патч |
+| FR-302 | Pre-turn recall через `UserPromptSubmit` | Полное | Частично | `lib/runtime/bridge/qwen.js` → `handleUserPromptSubmit()`; hook entrypoints — следующий патч |
+| FR-303 | Finalization через `SessionEnd` | Полное | Частично | `lib/runtime/bridge/qwen.js` → `handleSessionEnd()` с `onSessionEnd()` + `shutdownAll()`; hook entrypoints — следующий патч |
+| FR-304 | Write interception через `PreToolUse` / `PostToolUse` | Полное | Частично | `lib/runtime/bridge/qwen.js` → `handlePreToolUse()` + `handlePostToolUse()`; hook entrypoints — следующий патч |
 
 ## OpenCode
 
@@ -71,7 +71,7 @@
 
 ## Вывод
 
-### Статус по состоянию на 2026-04-17 (обновлено после FR-204)
+### Статус по состоянию на 2026-04-17 (обновлено после feat/qwen-bridge-module)
 
 **Claude Code — полностью завершён (FR-101–FR-104):**
 - `SessionStart` bootstrap ✅
@@ -94,8 +94,15 @@
 - `PreToolUse` Bash guard + `writeCanonicalFile` ✅
 - `Stop` checkpoint ✅
 
+**Qwen Code — bridge-модуль реализован, hook entrypoints и settings — следующий патч (FR-301–FR-304):**
+
+- `lib/runtime/bridge/qwen.js` ✅ (все handlers: SessionStart, UserPromptSubmit, PreToolUse, PostToolUse, SessionEnd, Stop, PreCompact, PostCompact)
+- `test/runtime/qwen-bridge.test.js` ✅ (33 кейса)
+- `.qwen/hooks/` entrypoints 🔜 (следующий патч)
+- `.qwen/settings.json` hooks config 🔜 (следующий патч)
+
 **Следующие в очереди:**
-- Qwen Code: FR-301–FR-304
+- Qwen Code: `.qwen/hooks/` entrypoints + `.qwen/settings.json` update
 - OpenCode: FR-401–FR-404
 
 **Открытые архитектурные вопросы:**
