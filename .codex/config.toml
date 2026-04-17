@@ -25,6 +25,9 @@ command = "node \"$(git rev-parse --show-toplevel)/.codex/hooks/session-start.js
 [hooks.UserPromptSubmit]
 command = "node \"$(git rev-parse --show-toplevel)/.codex/hooks/user-prompt-submit.js\""
 
+[hooks.PreToolUse]
+command = "node \"$(git rev-parse --show-toplevel)/.codex/hooks/pre-tool-use.js\""
+
 [hooks.Stop]
 command = "bash \"$(git rev-parse --show-toplevel)/memory-bank/scripts/run-stop-hooks.sh\""
 
