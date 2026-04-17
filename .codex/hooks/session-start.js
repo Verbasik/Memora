@@ -10,7 +10,7 @@ async function main() {
   const { output, result } = handleSessionStart(payload);
 
   const files = result && result.contextEntries ? result.contextEntries.length : 0;
-  const chars = output && output.additional_context ? output.additional_context.length : 0;
+  const chars = typeof output === 'string' ? output.length : 0;
   log('SessionStart', `session=${payload.session_id} files=${files} injected=${chars}chars`);
 
   // SessionStart output is plain text (matches UserPromptSubmit convention).
