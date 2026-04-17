@@ -17,7 +17,8 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node \"$(git rev-parse --show-toplevel)/.codex/hooks/user-prompt-submit.js\""
+            "command": "node \"$(git rev-parse --show-toplevel)/.codex/hooks/user-prompt-submit.js\"",
+            "statusMessage": "Staging recall context"
           }
         ]
       }
