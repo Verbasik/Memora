@@ -44,8 +44,17 @@
 - Примеры из официальных provider sources должны оставаться рядом с соответствующими требованиями.
 - Карта покрытия в [90_FR_COVERAGE.md](./90_FR_COVERAGE.md) обновляется после каждого значимого патча.
 
-## Текущий статус
+## Текущий статус (2026-04-17)
 
-- Общий shared bridge layer уже добавлен в кодовую базу.
-- Claude `SessionStart` bootstrap уже реализован и протестирован.
-- Для остальных toolchains спецификация примеров уже собрана, но runtime wiring ещё не доведён до кода.
+### Завершено
+- Общий shared bridge layer (`lib/runtime/bridge/index.js`) — FR-001.
+- Claude Code bridge полностью реализован (FR-101–FR-104):
+  - `SessionStart` bootstrap → `lib/runtime/bridge/claude.js`
+  - `UserPromptSubmit` pre-turn recall → `.claude/hooks/user-prompt-submit.js`
+  - `PreToolUse`/`PostToolUse` write gate → `.claude/hooks/pre-tool-use.js`, `post-tool-use.js`
+  - `SessionEnd` finalization → `.claude/hooks/session-end.js`
+
+### Следующие этапы
+- Codex CLI: SessionStart, UserPromptSubmit, Stop-checkpoint, write helper (FR-201–FR-204).
+- Qwen Code: полный hook set (FR-301–FR-304).
+- OpenCode: plugin bridge (FR-401–FR-404).

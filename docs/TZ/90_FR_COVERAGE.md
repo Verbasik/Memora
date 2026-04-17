@@ -25,21 +25,21 @@
 | ID | Кратко | Покрытие официальными примерами | Статус реализации | Основание |
 |---|---|---|---|---|
 | FR-001 | Shared runtime bridge layer | Не требуется | Реализовано | `lib/runtime/bridge/index.js`, `test/runtime/bridge.test.js` |
-| FR-002 | Session bootstrap orchestration | Не требуется | Частично | общий bootstrap есть, но toolchain wiring покрыт не для всех |
-| FR-003 | Turn lifecycle orchestration | Не требуется | Частично | `prepareTurn()` реализован, native hook wiring ещё не везде |
-| FR-004 | Canonical write gate | Не требуется | Не начато | runtime API существует, adapter interception почти не подключён |
+| FR-002 | Session bootstrap orchestration | Не требуется | Реализовано | Claude: `SessionStart` hook + `bootstrapSession()`; Codex/Qwen/OpenCode — следующие этапы |
+| FR-003 | Turn lifecycle orchestration | Не требуется | Частично | Claude: `UserPromptSubmit` hook + `prepareTurn()` реализован; Codex/Qwen/OpenCode — следующие этапы |
+| FR-004 | Canonical write gate | Не требуется | Частично | Claude: `PreToolUse`/`PostToolUse` write gate реализован; Codex/Qwen/OpenCode — следующие этапы |
 | FR-005 | Graceful fallback | Не требуется | Частично | в shared bridge есть graceful degradation tests |
-| FR-006 | Toolchain source tagging | Не требуется | Частично | shared bridge принимает `toolchain`, но не все adapters это используют |
-| FR-007 | Finalize strategy split between checkpoint and true close | Не требуется | Не начато | пока зафиксировано только в ТЗ |
+| FR-006 | Toolchain source tagging | Не требуется | Частично | Claude: `source=claude` в bootstrap и recall; остальные toolchains — следующие этапы |
+| FR-007 | Finalize strategy split between checkpoint and true close | Не требуется | Частично | Claude: `SessionEnd` (true close) vs `Stop` (checkpoint) разделены; Codex/Qwen/OpenCode — следующие этапы |
 
 ## Claude Code
 
 | ID | Кратко | Покрытие официальными примерами | Статус реализации | Основание |
 |---|---|---|---|---|
 | FR-101 | Native bootstrap через `SessionStart` | Полное | Реализовано | `.claude/hooks/session-start.js`, `lib/runtime/bridge/claude.js`, `test/runtime/claude-session-start.test.js` |
-| FR-102 | Pre-turn recall через `UserPromptSubmit` | Полное | Не начато | в ТЗ есть пример, в коде wiring ещё не добавлен |
-| FR-103 | Finalization через `SessionEnd` | Полное | Не начато | в ТЗ есть пример, в `.claude/settings.json` пока нет |
-| FR-104 | Write interception через `PreToolUse` / `PostToolUse` | Полное | Не начато | в ТЗ есть примеры для screening и post-write sync |
+| FR-102 | Pre-turn recall через `UserPromptSubmit` | Полное | Реализовано | `.claude/hooks/user-prompt-submit.js`, `handleUserPromptSubmit()`, `test/runtime/claude-user-prompt-submit.test.js` |
+| FR-103 | Finalization через `SessionEnd` | Полное | Реализовано | `.claude/hooks/session-end.js`, `handleSessionEnd()` с try/finally, `test/runtime/claude-session-end.test.js` |
+| FR-104 | Write interception через `PreToolUse` / `PostToolUse` | Полное | Реализовано | `.claude/hooks/pre-tool-use.js`, `.claude/hooks/post-tool-use.js`, `CANONICAL_MEMORY_RE`, `test/runtime/claude-write-gate.test.js` |
 
 ## Codex CLI
 
@@ -71,7 +71,18 @@
 
 ## Вывод
 
-- **Разработку можно начинать сразу** по Claude Code, Qwen Code и OpenCode.
-- **Codex CLI тоже можно начинать**, если принять, что `Stop` — это checkpoint, а не полноценный `SessionEnd`.
-- Единственный незакрытый архитектурный вопрос, который остаётся сверх provider examples: **FR-205 / hard-close semantics для Codex CLI**.
+### Статус по состоянию на 2026-04-17
+
+**Claude Code — полностью завершён (FR-101–FR-104):**
+- `SessionStart` bootstrap ✅
+- `UserPromptSubmit` pre-turn recall ✅
+- `PreToolUse`/`PostToolUse` write gate ✅
+- `SessionEnd` finalization ✅
+
+**Следующие в очереди:**
+- Codex CLI: FR-201–FR-204 (SessionStart, UserPromptSubmit, Stop-checkpoint, write helper)
+- Qwen Code: FR-301–FR-304
+- OpenCode: FR-401–FR-404
+
+**Единственный незакрытый архитектурный вопрос:** FR-205 / hard-close semantics для Codex CLI.
 
