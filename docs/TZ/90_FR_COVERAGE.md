@@ -48,7 +48,7 @@
 | FR-201 | Native bootstrap через `SessionStart` | Полное | Реализовано | `lib/runtime/bridge/codex.js`, `.codex/hooks/session-start.js`, `test/runtime/codex-session-start.test.js`; output: `{ additional_context }` (snake_case) |
 | FR-202 | Pre-turn recall через `UserPromptSubmit` | Полное | Реализовано | `.codex/hooks/user-prompt-submit.js`, `handleUserPromptSubmit()`, plain stdout (не JSON); `test/runtime/codex-user-prompt-submit.test.js` |
 | FR-203 | `PreToolUse` / `PostToolUse` не универсальны | Частичное | Реализовано | `.codex/hooks/pre-tool-use.js` (Bash guard, exit 2), `writeCanonicalFile()` explicit helper, `.codex/hooks/memory-write-helper.js`; `test/runtime/codex-write-helper.test.js` |
-| FR-204 | `Stop` как checkpoint, не true close | Полное | Не начато | source-backed example есть, wiring нет |
+| FR-204 | `Stop` как checkpoint, не true close | Полное | Реализовано | `lib/runtime/bridge/codex.js` → `handleStop()`, `.codex/hooks/stop-checkpoint.js`, `run-stop-hooks.sh` проксирует payload; `test/runtime/codex-stop-checkpoint.test.js` |
 | FR-205 | Optional hard-close strategy | Частичное | Архитектурный пробел | у provider нет native `SessionEnd`, решение остаётся за Memora |
 
 ## Qwen Code
@@ -71,7 +71,7 @@
 
 ## Вывод
 
-### Статус по состоянию на 2026-04-17
+### Статус по состоянию на 2026-04-17 (обновлено после FR-204)
 
 **Claude Code — полностью завершён (FR-101–FR-104):**
 - `SessionStart` bootstrap ✅
@@ -79,8 +79,13 @@
 - `PreToolUse`/`PostToolUse` write gate ✅
 - `SessionEnd` finalization ✅
 
+**Codex CLI — завершён (FR-201–FR-204):**
+- `SessionStart` bootstrap ✅
+- `UserPromptSubmit` pre-turn recall ✅
+- `PreToolUse` Bash guard + `writeCanonicalFile` ✅
+- `Stop` checkpoint ✅
+
 **Следующие в очереди:**
-- Codex CLI: FR-204 (Stop checkpoint — последний Codex патч)
 - Qwen Code: FR-301–FR-304
 - OpenCode: FR-401–FR-404
 
