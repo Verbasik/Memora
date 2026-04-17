@@ -3,7 +3,7 @@
 **Purpose:** Provide a clear, role-based map of the Memora documentation set.  
 **Audience:** Users, maintainers, contributors, and AI-toolchain integrators.  
 **Read when:** You want to find the right technical document quickly.  
-**Last updated:** 2026-04-16
+**Last updated:** 2026-04-17
 
 **See also:** [../README.md](../README.md) | [../memory-bank/INDEX.md](../memory-bank/INDEX.md)
 
@@ -65,6 +65,7 @@ Read:
 - [Toolchains](./TOOLCHAINS.md)
 - [Hooks](./HOOKS.md)
 - [Workflows](./WORKFLOWS.md)
+- [Runtime Bridge TЗ](./TZ/INDEX.md)
 
 ### I want to understand the included memory workflows
 Read:
@@ -128,6 +129,7 @@ Read:
 | [PATTERNS.md](./PATTERNS.md) | Which reusable knowledge and workflow patterns come with Memora? |
 | [SECURITY.md](./SECURITY.md) | How does Memora approach security and memory hygiene? |
 | [RUNTIME.md](./RUNTIME.md) | How does the runtime layer screen memory writes and context files? |
+| [TZ/INDEX.md](./TZ/INDEX.md) | How should runtime bridge integration be implemented across toolchains? |
 | [COMPATIBILITY.md](./COMPATIBILITY.md) | Which provider versions and features are supported? |
 | [MANIFESTO.md](./MANIFESTO.md) | What design philosophy and protocol mindset shape Memora? |
 
