@@ -2,21 +2,19 @@
 'use strict';
 
 const { handleStop } = require('../../lib/runtime/bridge/codex');
-
-const VERBOSE = process.env.MEMORA_VERBOSE === '1';
-function _log(hook, msg) { process.stderr.write(`[memora:${hook}] ${msg}\n`); }
+const { log, debug } = require('../../lib/runtime/hook-logger');
 
 async function main() {
   const rawInput = await _readStdin();
   const payload = rawInput.trim() ? JSON.parse(rawInput) : {};
 
   if (payload.stop_hook_active) {
-    if (VERBOSE) _log('Stop', 'guard — stop_hook_active, skipping checkpoint');
+    debug('Stop', 'guard — stop_hook_active, skipping checkpoint');
     return;
   }
 
   handleStop(payload);
-  _log('Stop', `checkpoint — session=${payload.session_id || 'unknown'} turn=${payload.turn_id || 'unknown'}`);
+  log('Stop', `checkpoint — session=${payload.session_id || 'unknown'} turn=${payload.turn_id || 'unknown'}`);
 }
 
 function _readStdin() {

@@ -2,9 +2,7 @@
 'use strict';
 
 const { handlePreToolUse } = require('../../lib/runtime/bridge/codex');
-
-const VERBOSE = process.env.MEMORA_VERBOSE === '1';
-function _log(hook, msg) { process.stderr.write(`[memora:${hook}] ${msg}\n`); }
+const { log, debug } = require('../../lib/runtime/hook-logger');
 
 async function main() {
   const rawInput = await _readStdin();
@@ -12,12 +10,11 @@ async function main() {
   const result = handlePreToolUse(payload);
 
   if (result && result.blocked) {
-    // Always log blocks
-    _log('PreToolUse', `✗ BLOCKED Bash — ${result.reason}`);
+    log('PreToolUse', `✗ BLOCKED Bash — ${result.reason}`);
     process.exit(2);
-  } else if (VERBOSE) {
+  } else {
     const cmd = ((payload.tool_input && payload.tool_input.command) || '').slice(0, 60);
-    if (cmd) _log('PreToolUse', `✓ allowed Bash: ${cmd}`);
+    if (cmd) debug('PreToolUse', `✓ allowed Bash: ${cmd}`);
   }
 }
 

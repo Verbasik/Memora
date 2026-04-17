@@ -2,9 +2,7 @@
 'use strict';
 
 const { handlePostToolUse } = require('../../lib/runtime/bridge/claude');
-
-const VERBOSE = process.env.MEMORA_VERBOSE === '1';
-function _log(hook, msg) { process.stderr.write(`[memora:${hook}] ${msg}\n`); }
+const { log, debug } = require('../../lib/runtime/hook-logger');
 
 async function main() {
   const rawInput = await _readStdin();
@@ -14,10 +12,9 @@ async function main() {
   const fp = (payload.tool_input && payload.tool_input.file_path) || '';
 
   if (output) {
-    // Always log canonical writes — they modify memory bank
-    _log('PostToolUse', `✓ canonical write observed: ${fp}`);
-  } else if (VERBOSE && fp) {
-    _log('PostToolUse', `pass (non-canonical): ${fp}`);
+    log('PostToolUse', `✓ canonical write observed: ${fp}`);
+  } else if (fp) {
+    debug('PostToolUse', `pass (non-canonical): ${fp}`);
   }
 
   if (output) {

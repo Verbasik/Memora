@@ -2,16 +2,14 @@
 'use strict';
 
 const { handleSessionEnd } = require('../../lib/runtime/bridge/claude');
-
-function _log(hook, msg) { process.stderr.write(`[memora:${hook}] ${msg}\n`); }
+const { log } = require('../../lib/runtime/hook-logger');
 
 async function main() {
   const rawInput = await _readStdin();
   const payload = rawInput.trim() ? JSON.parse(rawInput) : {};
   const output = handleSessionEnd(payload);
 
-  // Always log — session end is always significant
-  _log('SessionEnd', `session=${payload.session_id || 'unknown'} reason=${payload.reason || 'unknown'} finalized`);
+  log('SessionEnd', `session=${payload.session_id || 'unknown'} reason=${payload.reason || 'unknown'} finalized`);
 
   if (output) {
     process.stdout.write(JSON.stringify(output) + '\n');
