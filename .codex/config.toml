@@ -22,6 +22,9 @@ project_doc_fallback_filenames = ["CLAUDE.md"]
 [hooks.SessionStart]
 command = "node \"$(git rev-parse --show-toplevel)/.codex/hooks/session-start.js\""
 
+[hooks.UserPromptSubmit]
+command = "node \"$(git rev-parse --show-toplevel)/.codex/hooks/user-prompt-submit.js\""
+
 [hooks.Stop]
 command = "bash \"$(git rev-parse --show-toplevel)/memory-bank/scripts/run-stop-hooks.sh\""
 
