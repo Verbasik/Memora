@@ -1,49 +1,66 @@
 /**
- * gc-trigger.js — OpenCode plugin для детерминированного триггера garbage collection.
+ * gc-trigger.js — OpenCode plugin for deterministic garbage-collection checks.
  *
- * Подписывается на:
- *   - "session.idle"         — агент завершил сессию
- *   - "tool.execute.after"   — после выполнения инструмента update-memory
- *
- * Advisory: выводит additionalContext агенту, НЕ запускает gc автоматически.
- * Порог: GC_THRESHOLD (default: 20 файлов в SESSIONS/).
+ * Updated to the current function-based OpenCode plugin API.
+ * Advisory-only: logs shell check results instead of injecting model context.
  */
 
-import { execSync, execFileSync } from "child_process";
+import { execFileSync } from "child_process";
 
-export default {
-  name: "gc-trigger",
+function shouldRun(event) {
+  const isSessionIdle = event.type === "session.idle";
+  const isAfterUpdateMemory =
+    event.type === "tool.execute.after" &&
+    event.tool?.name?.includes("update-memory");
 
-  subscribe: ["session.idle", "tool.execute.after"],
+  return isSessionIdle || isAfterUpdateMemory;
+}
 
-  handler(event, ctx) {
-    const isSessionIdle = event.type === "session.idle";
-    const isAfterUpdateMemory =
-      event.type === "tool.execute.after" &&
-      event.tool?.name?.includes("update-memory");
+function runCheck(cwd, scriptName) {
+  const repoRoot = execFileSync(
+    "git",
+    ["rev-parse", "--show-toplevel"],
+    { cwd, encoding: "utf-8" }
+  ).trim();
 
-    if (!isSessionIdle && !isAfterUpdateMemory) {
-      return {};
-    }
+  return execFileSync(
+    "bash",
+    [`${repoRoot}/memory-bank/scripts/${scriptName}`],
+    { encoding: "utf-8", timeout: 5000 }
+  ).trim();
+}
 
-    try {
-      const repoRoot = execFileSync(
-        "git", ["rev-parse", "--show-toplevel"],
-        { cwd: ctx.cwd, encoding: "utf-8" }
-      ).trim();
+async function logResult(client, output) {
+  if (!output) return;
+  await client.app.log({
+    body: {
+      service: "memora-gc-trigger",
+      level: "info",
+      message: output,
+    },
+  });
+}
 
-      const output = execSync(
-        `bash "${repoRoot}/memory-bank/scripts/check-gc-trigger.sh"`,
-        { encoding: "utf-8", timeout: 5000 }
-      );
+export const GcTriggerPlugin = async ({ client, directory, worktree }) => {
+  const cwd = worktree || directory || process.cwd();
 
-      if (output.trim()) {
-        return { additionalContext: output.trim() };
+  return {
+    event: async ({ event }) => {
+      if (!shouldRun(event)) return;
+
+      try {
+        const output = runCheck(cwd, "check-gc-trigger.sh");
+        await logResult(client, output);
+      } catch (err) {
+        await client.app.log({
+          body: {
+            service: "memora-gc-trigger",
+            level: "warn",
+            message: "gc trigger check failed",
+            extra: { error: err.message },
+          },
+        });
       }
-    } catch (_) {
-      // Не блокируем при ошибке скрипта
-    }
-
-    return {};
-  },
+    },
+  };
 };

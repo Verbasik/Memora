@@ -1,55 +1,71 @@
 /**
- * reflect-trigger.js — OpenCode plugin для детерминированного триггера рефлексии.
+ * reflect-trigger.js — OpenCode plugin for deterministic reflection checks.
  *
- * OpenCode plugin API (opencode.ai):
- *   - ES module: export default { name, subscribe, handler }
- *   - subscribe: массив событий из event bus OpenCode
- *   - handler(event, ctx): возвращает HookResult или {}
+ * Current OpenCode plugin API expects one or more exported plugin functions.
+ * Older object-style plugins fail to load with "Plugin export is not a function".
  *
- * Подписывается на:
- *   - "session.idle"         — агент завершил сессию
- *   - "tool.execute.after"   — после выполнения любого инструмента
- *
- * Advisory: выводит additionalContext агенту, НЕ запускает рефлексию автоматически.
+ * Advisory-only behavior:
+ *   - react to session.idle and update-memory tool completion
+ *   - run the shell threshold check
+ *   - log the suggested action instead of trying to inject model context
  */
 
-import { execSync, execFileSync } from "child_process";
+import { execFileSync } from "child_process";
 
-export default {
-  name: "reflect-trigger",
+function shouldRun(event) {
+  const isSessionIdle = event.type === "session.idle";
+  const isAfterUpdateMemory =
+    event.type === "tool.execute.after" &&
+    event.tool?.name?.includes("update-memory");
 
-  subscribe: ["session.idle", "tool.execute.after"],
+  return isSessionIdle || isAfterUpdateMemory;
+}
 
-  handler(event, ctx) {
-    // Срабатываем только при завершении сессии
-    // или после инструмента update-memory (новая сессия записана)
-    const isSessionIdle = event.type === "session.idle";
-    const isAfterUpdateMemory =
-      event.type === "tool.execute.after" &&
-      event.tool?.name?.includes("update-memory");
+function runCheck(cwd, scriptName) {
+  const repoRoot = execFileSync(
+    "git",
+    ["rev-parse", "--show-toplevel"],
+    { cwd, encoding: "utf-8" }
+  ).trim();
 
-    if (!isSessionIdle && !isAfterUpdateMemory) {
-      return {};
-    }
+  return execFileSync(
+    "bash",
+    [`${repoRoot}/memory-bank/scripts/${scriptName}`],
+    { encoding: "utf-8", timeout: 5000 }
+  ).trim();
+}
 
-    try {
-      const repoRoot = execFileSync(
-        "git", ["rev-parse", "--show-toplevel"],
-        { cwd: ctx.cwd, encoding: "utf-8" }
-      ).trim();
+async function logResult(client, output) {
+  if (!output) return;
+  await client.app.log({
+    body: {
+      service: "memora-reflect-trigger",
+      level: "info",
+      message: output,
+    },
+  });
+}
 
-      const output = execSync(
-        `bash "${repoRoot}/memory-bank/scripts/check-reflect-trigger.sh"`,
-        { encoding: "utf-8", timeout: 5000 }
-      );
+export const ReflectTriggerPlugin = async ({ client, directory, worktree }) => {
+  const cwd = worktree || directory || process.cwd();
 
-      if (output.trim()) {
-        return { additionalContext: output.trim() };
+  return {
+    event: async ({ event }) => {
+      if (!shouldRun(event)) return;
+
+      try {
+        const output = runCheck(cwd, "check-reflect-trigger.sh");
+        await logResult(client, output);
+      } catch (err) {
+        await client.app.log({
+          body: {
+            service: "memora-reflect-trigger",
+            level: "warn",
+            message: "reflect trigger check failed",
+            extra: { error: err.message },
+          },
+        });
       }
-    } catch (_) {
-      // Не блокируем при ошибке скрипта
-    }
-
-    return {};
-  },
+    },
+  };
 };
